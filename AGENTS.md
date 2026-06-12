@@ -65,7 +65,6 @@ User-facing behavior includes:
 - abstention behavior
 - validation behavior
 - prompt and resource loading
-- CLI exit status and output contract
 - integration handoff boundaries between the drafter and `context-compiler`
 
 If a user-facing behavior is changed or introduced, add or update tests to cover it.
