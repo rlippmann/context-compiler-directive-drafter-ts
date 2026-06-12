@@ -1,7 +1,7 @@
 {
   "name": "@rlippmann/context-compiler-directive-drafter",
   "version": "0.1.0",
-  "description": "Scaffolding for the TypeScript Context Compiler Directive Drafter package.",
+  "description": "TypeScript acquisition-layer utilities for Context Compiler directive drafting.",
   "keywords": [
     "context-compiler",
     "directive-drafter",
