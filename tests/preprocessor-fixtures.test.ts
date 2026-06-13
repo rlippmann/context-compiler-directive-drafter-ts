@@ -33,8 +33,9 @@ function normalizeValidatorResult(result: unknown): { classification: string; ou
 }
 
 describe("preprocessor api contract", () => {
-  it("exports the documented validator/parser boundary", () => {
+  it("tracks the synced Python api-contract fixture while allowing only package-name differences", () => {
     expect(apiContract.kind).toBe("api-contract");
+    expect(apiContract.module).toBe("context_compiler_directive_drafter");
 
     for (const name of apiContract.required_exports) {
       expect(name in preprocessor).toBe(true);

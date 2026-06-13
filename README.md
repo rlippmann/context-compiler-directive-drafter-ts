@@ -78,10 +78,17 @@ Check for fixture drift:
 PREPROCESSOR_FIXTURES_SOURCE=/path/to/context-compiler-directive-drafter/tests/fixtures/preprocessor npm run fixtures:preprocessor:check
 ```
 
-The local `tests/fixtures/preprocessor/public-api-v1.json` file is intentionally
-not synced from Python. It stays explicit in this repository because the
-package/module name and exported TypeScript surface are package-specific.
-
 CI should provide `PREPROCESSOR_FIXTURES_SOURCE` explicitly as well. This
 matches the existing `context-compiler-ts` pattern of requiring an explicit
 fixture source for drift checks rather than silently defaulting to a local path.
+
+Sync also records the upstream Python directive-drafter commit in
+`tests/fixtures/preprocessor/.source-commit`. Drift checks verify both:
+
+- synced fixture files still match the source checkout
+- the recorded upstream commit still matches the source checkout used for the check
+
+`public-api-v1.json` is synced from Python too. If this package needs to handle
+module/package naming differences, that should happen narrowly in the test
+harness rather than by excluding the shared API-contract fixture from sync or
+drift checks.
