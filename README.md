@@ -1,6 +1,6 @@
 # @rlippmann/context-compiler-directive-drafter
 
-`@rlippmann/context-compiler-directive-drafter` is the planned TypeScript home for the Context Compiler Directive Drafter.
+`@rlippmann/context-compiler-directive-drafter` is the TypeScript home for the Context Compiler Directive Drafter preprocessor surface.
 
 The Context Compiler core is the Authority Layer.
 
@@ -16,17 +16,25 @@ Only the Context Compiler core may apply directives or change authoritative stat
 
 ## Status
 
-This initial TypeScript package is scaffolding only.
+This package currently implements the TypeScript port of the directive-drafter preprocessor surface:
 
-It sets up package metadata, TypeScript compilation, Vitest, CI, and repository structure.
+- `preprocess_heuristic`
+- `validate_preprocessor_output`
+- `parse_preprocessor_output`
+- `render_prompt`
 
-It does not implement drafting behavior yet.
+Those behaviors are validated against synced Python `context-compiler-directive-drafter` fixtures.
 
-`draft_directive()` is intentionally out of scope for this initial scaffold.
+Still out of scope:
+
+- future acquisition workflows
+- CLI/REPL behavior
+- `draft_directive()`
+- authority-layer behavior
 
 ## Design boundary
 
-When this package grows beyond scaffolding, it should:
+This package should:
 
 - propose candidate directives from natural-language input
 - keep those proposals non-authoritative
@@ -59,3 +67,36 @@ Run tests:
 ```bash
 npm test
 ```
+
+## Preprocessor Fixtures
+
+This repository syncs portable preprocessor fixtures from the Python
+`context-compiler-directive-drafter` source corpus into
+`tests/fixtures/preprocessor`.
+
+Refresh local fixtures:
+
+```bash
+PREPROCESSOR_FIXTURES_SOURCE=/path/to/context-compiler-directive-drafter/tests/fixtures/preprocessor npm run fixtures:preprocessor:sync
+```
+
+Check for fixture drift:
+
+```bash
+PREPROCESSOR_FIXTURES_SOURCE=/path/to/context-compiler-directive-drafter/tests/fixtures/preprocessor npm run fixtures:preprocessor:check
+```
+
+CI should provide `PREPROCESSOR_FIXTURES_SOURCE` explicitly as well. This
+matches the existing `context-compiler-ts` pattern of requiring an explicit
+fixture source for drift checks rather than silently defaulting to a local path.
+
+Sync also records the upstream Python directive-drafter commit in
+`tests/fixtures/preprocessor/.source-commit`. Drift checks verify both:
+
+- synced fixture files still match the source checkout
+- the recorded upstream commit still matches the source checkout used for the check
+
+`public-api-v1.json` is synced from Python too. If this package needs to handle
+module/package naming differences, that should happen narrowly in the test
+harness rather than by excluding the shared API-contract fixture from sync or
+drift checks.

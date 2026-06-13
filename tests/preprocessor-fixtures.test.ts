@@ -4,6 +4,7 @@ import * as preprocessor from "../src/index.js";
 import { loadPreprocessorApiContractFixture, loadPreprocessorFixtures } from "./harness/fixtures.js";
 
 type PreprocessorLike = {
+  preprocess_heuristic?: (message: string) => unknown;
   validate_preprocessor_output?: (raw: unknown, opts?: { source_input?: string; sourceInput?: string }) => unknown;
   parse_preprocessor_output?: (raw: unknown, opts?: { source_input?: string; sourceInput?: string }) => string | null;
 };
@@ -32,9 +33,44 @@ function normalizeValidatorResult(result: unknown): { classification: string; ou
   };
 }
 
+function normalizeHeuristicResult(result: unknown): {
+  outcome: string;
+  directive: string | null;
+  rule_id: string | null;
+} {
+  if (typeof result !== "object" || result === null) {
+    throw new Error("preprocess_heuristic returned non-object result");
+  }
+
+  const record = result as Record<string, unknown>;
+  expect(Object.prototype.hasOwnProperty.call(record, "outcome")).toBe(true);
+  expect(Object.prototype.hasOwnProperty.call(record, "directive")).toBe(true);
+  expect(Object.prototype.hasOwnProperty.call(record, "rule_id")).toBe(true);
+
+  const outcome = record.outcome;
+  const directive = record.directive;
+  const ruleId = record.rule_id;
+  if (typeof outcome === "string") {
+    if (directive !== null && typeof directive !== "string") {
+      throw new Error("preprocess_heuristic directive must be string or explicit null");
+    }
+    if (ruleId !== null && typeof ruleId !== "string") {
+      throw new Error("preprocess_heuristic rule_id must be string or explicit null");
+    }
+    return {
+      outcome,
+      directive,
+      rule_id: ruleId
+    };
+  }
+
+  throw new Error("preprocess_heuristic result missing expected Python public shape");
+}
+
 describe("preprocessor api contract", () => {
-  it("exports the documented validator/parser boundary", () => {
+  it("tracks the synced Python api-contract fixture while allowing only package-name differences", () => {
     expect(apiContract.kind).toBe("api-contract");
+    expect(apiContract.module).toBe("context_compiler_directive_drafter");
 
     for (const name of apiContract.required_exports) {
       expect(name in preprocessor).toBe(true);
@@ -57,11 +93,38 @@ describe("preprocessor api contract", () => {
       preprocessor.parsePreprocessorOutput(rawOutput, { sourceInput })
     );
   });
+
+  it("returns the Python public heuristic shape", () => {
+    if (typeof preprocessor.preprocess_heuristic !== "function") {
+      throw new Error("Missing preprocess_heuristic export");
+    }
+
+    const result = normalizeHeuristicResult(preprocessor.preprocess_heuristic("use docker"));
+    expect(result).toEqual({
+      outcome: "directive",
+      directive: "use docker",
+      rule_id: null
+    });
+  });
 });
 
-describe("preprocessor fixtures (validator/parse)", () => {
+describe("preprocessor fixtures", () => {
   for (const fixture of fixtures) {
     it(fixture.name, () => {
+      if (fixture.payload.kind === "heuristic") {
+        if (typeof pre.preprocess_heuristic !== "function") {
+          throw new Error("Missing preprocess_heuristic export");
+        }
+
+        const actual = normalizeHeuristicResult(pre.preprocess_heuristic(fixture.payload.input as string));
+        expect(actual).toEqual({
+          outcome: fixture.payload.expected?.classification,
+          directive: fixture.payload.expected?.output ?? null,
+          rule_id: null
+        });
+        return;
+      }
+
       if (fixture.payload.kind === "validator") {
         if (typeof pre.validate_preprocessor_output !== "function") {
           throw new Error("Missing validate_preprocessor_output export");
