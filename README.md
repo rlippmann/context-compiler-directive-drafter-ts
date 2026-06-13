@@ -69,15 +69,19 @@ This repository syncs portable preprocessor fixtures from the Python
 Refresh local fixtures:
 
 ```bash
-npm run fixtures:preprocessor:sync
+PREPROCESSOR_FIXTURES_SOURCE=/path/to/context-compiler-directive-drafter/tests/fixtures/preprocessor npm run fixtures:preprocessor:sync
 ```
 
 Check for fixture drift:
 
 ```bash
-npm run fixtures:preprocessor:check
+PREPROCESSOR_FIXTURES_SOURCE=/path/to/context-compiler-directive-drafter/tests/fixtures/preprocessor npm run fixtures:preprocessor:check
 ```
 
 The local `tests/fixtures/preprocessor/public-api-v1.json` file is intentionally
 not synced from Python. It stays explicit in this repository because the
 package/module name and exported TypeScript surface are package-specific.
+
+CI should provide `PREPROCESSOR_FIXTURES_SOURCE` explicitly as well. This
+matches the existing `context-compiler-ts` pattern of requiring an explicit
+fixture source for drift checks rather than silently defaulting to a local path.

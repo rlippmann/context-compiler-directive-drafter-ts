@@ -9,6 +9,10 @@ on:
 jobs:
   build-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PY_DRAFTER_FIXTURE_REF: d30972638703b2516bcd582bd469fa8fe8ebbe09
+      PY_DRAFTER_FIXTURE_CHECKOUT: /tmp/context-compiler-directive-drafter-source
 
     steps:
       - name: Check out repository
@@ -21,7 +25,24 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
+
+      - name: Checkout Python directive-drafter fixture source
+        run: |
+          echo "Python directive-drafter fixture ref: ${PY_DRAFTER_FIXTURE_REF}"
+          echo "Python checkout path: ${PY_DRAFTER_FIXTURE_CHECKOUT}"
+          git init "${PY_DRAFTER_FIXTURE_CHECKOUT}"
+          git -C "${PY_DRAFTER_FIXTURE_CHECKOUT}" remote add origin https://github.com/rlippmann/context-compiler-directive-drafter
+          git -C "${PY_DRAFTER_FIXTURE_CHECKOUT}" fetch --depth 1 origin "${PY_DRAFTER_FIXTURE_REF}"
+          git -C "${PY_DRAFTER_FIXTURE_CHECKOUT}" checkout --detach FETCH_HEAD
+          echo "Resolved fixture source: ${PY_DRAFTER_FIXTURE_CHECKOUT}/tests/fixtures/preprocessor"
+
+      - name: Check preprocessor fixture drift
+        env:
+          PREPROCESSOR_FIXTURES_SOURCE: /tmp/context-compiler-directive-drafter-source/tests/fixtures/preprocessor
+        run: |
+          echo "Using PREPROCESSOR_FIXTURES_SOURCE=${PREPROCESSOR_FIXTURES_SOURCE}"
+          npm run fixtures:preprocessor:check
 
       - name: Build
         run: npm run build

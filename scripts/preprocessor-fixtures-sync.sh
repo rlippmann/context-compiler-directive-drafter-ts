@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DEFAULT_SOURCE="/Users/rlippmann/Source/context-compiler-directive-drafter/tests/fixtures/preprocessor"
-SOURCE_DIR="${PREPROCESSOR_FIXTURES_SOURCE:-$DEFAULT_SOURCE}"
+if [[ -z "${PREPROCESSOR_FIXTURES_SOURCE:-}" ]]; then
+  echo "[fixtures:preprocessor:sync] PREPROCESSOR_FIXTURES_SOURCE is required." >&2
+  echo "[fixtures:preprocessor:sync] Example: PREPROCESSOR_FIXTURES_SOURCE=/path/to/context-compiler-directive-drafter/tests/fixtures/preprocessor npm run fixtures:preprocessor:sync" >&2
+  exit 1
+fi
+
+SOURCE_DIR="$PREPROCESSOR_FIXTURES_SOURCE"
 TARGET_DIR="tests/fixtures/preprocessor"
 LOCAL_CONTRACT="public-api-v1.json"
 
