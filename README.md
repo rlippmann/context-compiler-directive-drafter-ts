@@ -1,6 +1,6 @@
 # @rlippmann/context-compiler-directive-drafter
 
-`@rlippmann/context-compiler-directive-drafter` is the planned TypeScript home for the Context Compiler Directive Drafter.
+`@rlippmann/context-compiler-directive-drafter` is the TypeScript home for the Context Compiler Directive Drafter preprocessor surface.
 
 The Context Compiler core is the Authority Layer.
 
@@ -16,17 +16,25 @@ Only the Context Compiler core may apply directives or change authoritative stat
 
 ## Status
 
-This initial TypeScript package is scaffolding only.
+This package currently implements the TypeScript port of the directive-drafter preprocessor surface:
 
-It sets up package metadata, TypeScript compilation, Vitest, CI, and repository structure.
+- `preprocess_heuristic`
+- `validate_preprocessor_output`
+- `parse_preprocessor_output`
+- `render_prompt`
 
-It does not implement drafting behavior yet.
+Those behaviors are validated against synced Python `context-compiler-directive-drafter` fixtures.
 
-`draft_directive()` is intentionally out of scope for this initial scaffold.
+Still out of scope:
+
+- future acquisition workflows
+- CLI/REPL behavior
+- `draft_directive()`
+- authority-layer behavior
 
 ## Design boundary
 
-When this package grows beyond scaffolding, it should:
+This package should:
 
 - propose candidate directives from natural-language input
 - keep those proposals non-authoritative
