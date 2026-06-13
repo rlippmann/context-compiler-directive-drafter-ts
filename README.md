@@ -59,3 +59,25 @@ Run tests:
 ```bash
 npm test
 ```
+
+## Preprocessor Fixtures
+
+This repository syncs portable preprocessor fixtures from the Python
+`context-compiler-directive-drafter` source corpus into
+`tests/fixtures/preprocessor`.
+
+Refresh local fixtures:
+
+```bash
+npm run fixtures:preprocessor:sync
+```
+
+Check for fixture drift:
+
+```bash
+npm run fixtures:preprocessor:check
+```
+
+The local `tests/fixtures/preprocessor/public-api-v1.json` file is intentionally
+not synced from Python. It stays explicit in this repository because the
+package/module name and exported TypeScript surface are package-specific.

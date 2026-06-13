@@ -34,6 +34,8 @@
   ],
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.json",
+    "fixtures:preprocessor:sync": "bash scripts/preprocessor-fixtures-sync.sh",
+    "fixtures:preprocessor:check": "bash scripts/preprocessor-fixtures-check.sh",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
     "prepack": "npm run build"

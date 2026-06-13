@@ -2,7 +2,8 @@ import { readdir, readFile } from "node:fs/promises";
 import { basename, join, resolve } from "node:path";
 
 export interface PreprocessorFixtureCase {
-  kind: "validator" | "parse";
+  kind: "heuristic" | "validator" | "parse";
+  input?: string;
   raw_output: unknown;
   source_input?: string;
   expected?: {
@@ -37,13 +38,14 @@ export async function loadPreprocessorFixtures(): Promise<Array<NamedFixture<Pre
   return Promise.all(
     files.map(async (path) => {
       const raw = await readFile(path, "utf8");
+      const payload = JSON.parse(raw) as PreprocessorFixtureCase;
       return {
         name: basename(path, ".json"),
         path,
-        payload: JSON.parse(raw) as PreprocessorFixtureCase
+        payload
       };
     })
-  );
+  ).then((loaded) => loaded.filter((fixture) => fixture.payload.kind === "validator" || fixture.payload.kind === "parse"));
 }
 
 export async function loadPreprocessorApiContractFixture(): Promise<PreprocessorApiContractFixture> {
