@@ -408,10 +408,7 @@ function stripLeadingHeaders(promptTemplate: string): string {
   const lines = promptTemplate.split(/\r?\n/);
   let start = 0;
   while (start < lines.length) {
-    const line = lines[start];
-    if (line == null) {
-      break;
-    }
+    const line = lines[start]!;
     const trimmed = line.trim();
     if (trimmed === "" || line.trimStart().startsWith("#")) {
       start += 1;

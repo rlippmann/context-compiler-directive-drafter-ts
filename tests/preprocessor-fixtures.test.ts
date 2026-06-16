@@ -18,6 +18,17 @@ const approvedTsRuntimeAliases = [
   "preprocessHeuristic",
   "renderPrompt"
 ] as const;
+const typingOnlyNames = ["PreprocessOutcome", "PreprocessResult"] as const;
+const expectedPythonRuntimeExports = [
+  "PREPROCESSOR_NO_DIRECTIVE_SENTINEL",
+  "PREPROCESS_OUTCOME_DIRECTIVE",
+  "PREPROCESS_OUTCOME_NO_DIRECTIVE",
+  "PREPROCESS_OUTCOME_UNKNOWN",
+  "parse_preprocessor_output",
+  "preprocess_heuristic",
+  "render_prompt",
+  "validate_preprocessor_output"
+] as const;
 
 function sourceInputOptions(sourceInput?: string): { source_input?: string } {
   return sourceInput == null ? {} : { source_input: sourceInput };
@@ -87,6 +98,22 @@ describe("preprocessor api contract", () => {
     expect(actualRuntimeExports).toEqual(expectedRuntimeExports);
   });
 
+  it("keeps contract fixture entries unique", () => {
+    expect(new Set(apiContract.required_exports).size).toBe(apiContract.required_exports.length);
+  });
+
+  it("matches the hardened Python runtime export contract exactly", () => {
+    expect([...apiContract.required_exports].sort()).toEqual([...expectedPythonRuntimeExports].sort());
+  });
+
+  it("excludes typing-only names from the contract fixture and runtime module", () => {
+    for (const name of typingOnlyNames) {
+      expect(apiContract.required_exports).not.toContain(name);
+      expect(Object.prototype.hasOwnProperty.call(preprocessor, name)).toBe(false);
+      expect(Object.keys(preprocessor)).not.toContain(name);
+    }
+  });
+
   it("adds camelCase aliases for snake_case validator/parser exports", () => {
     expect(preprocessor.validatePreprocessorOutput).toBe(preprocessor.validate_preprocessor_output);
     expect(preprocessor.parsePreprocessorOutput).toBe(preprocessor.parse_preprocessor_output);
@@ -115,6 +142,53 @@ describe("preprocessor api contract", () => {
       directive: "use docker",
       rule_id: null
     });
+  });
+});
+
+describe("render_prompt", () => {
+  it("returns null for non-string template input", () => {
+    const rendered = preprocessor.render_prompt(123 as unknown as string, {
+      premise: null,
+      policies: {}
+    });
+
+    expect(rendered).toBeNull();
+  });
+
+  it("renders null premise and empty policies without placeholder tokens", () => {
+    const rendered = preprocessor.render_prompt(
+      "# Heading\n\n* premise: <NULL_OR_VALUE>\n* policies: <SET OF CURRENT POLICY ITEMS>",
+      { premise: null, policies: {} }
+    );
+
+    expect(rendered).toBe("* premise: null\n* policies: (none)");
+    expect(rendered).not.toContain("<NULL_OR_VALUE>");
+    expect(rendered).not.toContain("<SET OF CURRENT POLICY ITEMS>");
+  });
+
+  it("deduplicates and sorts normalized policy names", () => {
+    const rendered = preprocessor.render_prompt("* policies: <SET OF CURRENT POLICY ITEMS>", {
+      premise: null,
+      policies: {
+        "shared": true,
+        "Shared": true,
+        "the zeta": true,
+        "beta_item": true,
+        "an alpha": true
+      }
+    });
+
+    expect(rendered).toBe("* policies: alpha, beta item, shared, zeta");
+    expect(rendered?.match(/shared/g)?.length ?? 0).toBe(1);
+  });
+
+  it("normalizes newline premise text deterministically", () => {
+    const rendered = preprocessor.render_prompt("* premise: <NULL_OR_VALUE>", {
+      premise: "first line\nsecond line!",
+      policies: {}
+    });
+
+    expect(rendered).toBe("* premise: first line\nsecond line!");
   });
 });
 
@@ -159,4 +233,51 @@ describe("preprocessor fixtures", () => {
       expect(parsed).toEqual(fixture.payload.expected_parsed);
     });
   }
+});
+
+describe("validator defensive coverage", () => {
+  it("rejects structured directive output when output is non-string", () => {
+    expect(
+      preprocessor.validate_preprocessor_output({
+        classification: "directive",
+        output: 123
+      })
+    ).toEqual({
+      classification: "unknown",
+      output: null
+    });
+  });
+
+  it("rejects fenced source-aware fallback rewrites as unknown", () => {
+    expect(
+      preprocessor.validate_preprocessor_output("use docker", {
+        source_input: "~~~ use docker ~~~"
+      })
+    ).toEqual({
+      classification: "unknown",
+      output: null
+    });
+  });
+
+  it("rejects backtick-fenced source-aware fallback rewrites as unknown", () => {
+    expect(
+      preprocessor.validate_preprocessor_output("use docker", {
+        source_input: "```\nuse docker\n```"
+      })
+    ).toEqual({
+      classification: "unknown",
+      output: null
+    });
+  });
+
+  it("rejects sentence-adjacent source-aware fallback rewrites as unknown", () => {
+    expect(
+      preprocessor.validate_preprocessor_output("prohibit peanuts", {
+        source_input: "ok. prohibit peanuts"
+      })
+    ).toEqual({
+      classification: "unknown",
+      output: null
+    });
+  });
 });
