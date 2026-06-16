@@ -33,12 +33,13 @@
     "README.md"
   ],
   "scripts": {
-    "build": "rm -rf dist && tsc -p tsconfig.json",
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
     "fixtures:preprocessor:sync": "bash scripts/preprocessor-fixtures-sync.sh",
     "fixtures:preprocessor:check": "bash scripts/preprocessor-fixtures-check.sh",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "smoke:pack-import": "rm -rf /tmp/context-compiler-directive-drafter-pack-smoke && mkdir -p /tmp/context-compiler-directive-drafter-pack-smoke && npm pack --pack-destination /tmp/context-compiler-directive-drafter-pack-smoke && node scripts/package-import-smoke.mjs /tmp/context-compiler-directive-drafter-pack-smoke",
     "prepack": "npm run build"
   },
   "devDependencies": {
