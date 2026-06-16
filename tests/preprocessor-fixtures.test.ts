@@ -146,6 +146,15 @@ describe("preprocessor api contract", () => {
 });
 
 describe("render_prompt", () => {
+  it("returns null for non-string template input", () => {
+    const rendered = preprocessor.render_prompt(123 as unknown as string, {
+      premise: null,
+      policies: {}
+    });
+
+    expect(rendered).toBeNull();
+  });
+
   it("renders null premise and empty policies without placeholder tokens", () => {
     const rendered = preprocessor.render_prompt(
       "# Heading\n\n* premise: <NULL_OR_VALUE>\n* policies: <SET OF CURRENT POLICY ITEMS>",
@@ -224,4 +233,18 @@ describe("preprocessor fixtures", () => {
       expect(parsed).toEqual(fixture.payload.expected_parsed);
     });
   }
+});
+
+describe("validator defensive coverage", () => {
+  it("rejects structured directive output when output is non-string", () => {
+    expect(
+      preprocessor.validate_preprocessor_output({
+        classification: "directive",
+        output: 123
+      })
+    ).toEqual({
+      classification: "unknown",
+      output: null
+    });
+  });
 });
