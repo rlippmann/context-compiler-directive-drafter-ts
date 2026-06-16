@@ -12,6 +12,12 @@ type PreprocessorLike = {
 const fixtures = await loadPreprocessorFixtures();
 const apiContract = await loadPreprocessorApiContractFixture();
 const pre = preprocessor as PreprocessorLike & Record<string, unknown>;
+const approvedTsRuntimeAliases = [
+  "validatePreprocessorOutput",
+  "parsePreprocessorOutput",
+  "preprocessHeuristic",
+  "renderPrompt"
+] as const;
 
 function sourceInputOptions(sourceInput?: string): { source_input?: string } {
   return sourceInput == null ? {} : { source_input: sourceInput };
@@ -75,6 +81,10 @@ describe("preprocessor api contract", () => {
     for (const name of apiContract.required_exports) {
       expect(name in preprocessor).toBe(true);
     }
+
+    const expectedRuntimeExports = [...apiContract.required_exports, ...approvedTsRuntimeAliases].sort();
+    const actualRuntimeExports = Object.keys(preprocessor).sort();
+    expect(actualRuntimeExports).toEqual(expectedRuntimeExports);
   });
 
   it("adds camelCase aliases for snake_case validator/parser exports", () => {
