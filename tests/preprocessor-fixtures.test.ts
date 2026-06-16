@@ -247,4 +247,26 @@ describe("validator defensive coverage", () => {
       output: null
     });
   });
+
+  it("rejects fenced source-aware fallback rewrites as unknown", () => {
+    expect(
+      preprocessor.validate_preprocessor_output("use docker", {
+        source_input: "~~~\nuse docker\n~~~"
+      })
+    ).toEqual({
+      classification: "unknown",
+      output: null
+    });
+  });
+
+  it("rejects sentence-adjacent source-aware fallback rewrites as unknown", () => {
+    expect(
+      preprocessor.validate_preprocessor_output("prohibit peanuts", {
+        source_input: "ok. prohibit peanuts"
+      })
+    ).toEqual({
+      classification: "unknown",
+      output: null
+    });
+  });
 });
