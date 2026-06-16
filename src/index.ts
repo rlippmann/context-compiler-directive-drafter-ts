@@ -2,16 +2,6 @@ export const PREPROCESSOR_NO_DIRECTIVE_SENTINEL = "<NO_DIRECTIVE>";
 export const PREPROCESS_OUTCOME_DIRECTIVE = "directive";
 export const PREPROCESS_OUTCOME_NO_DIRECTIVE = "no_directive";
 export const PREPROCESS_OUTCOME_UNKNOWN = "unknown";
-export const PreprocessOutcome = {
-  DIRECTIVE: PREPROCESS_OUTCOME_DIRECTIVE,
-  NO_DIRECTIVE: PREPROCESS_OUTCOME_NO_DIRECTIVE,
-  UNKNOWN: PREPROCESS_OUTCOME_UNKNOWN
-} as const;
-export const PreprocessResult = {
-  outcome: PREPROCESS_OUTCOME_UNKNOWN,
-  directive: null,
-  rule_id: null
-} as const;
 
 type PreprocessOutcomeValue =
   | typeof PREPROCESS_OUTCOME_DIRECTIVE
