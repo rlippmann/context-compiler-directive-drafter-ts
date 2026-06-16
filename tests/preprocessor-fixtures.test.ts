@@ -251,7 +251,18 @@ describe("validator defensive coverage", () => {
   it("rejects fenced source-aware fallback rewrites as unknown", () => {
     expect(
       preprocessor.validate_preprocessor_output("use docker", {
-        source_input: "~~~\nuse docker\n~~~"
+        source_input: "~~~ use docker ~~~"
+      })
+    ).toEqual({
+      classification: "unknown",
+      output: null
+    });
+  });
+
+  it("rejects backtick-fenced source-aware fallback rewrites as unknown", () => {
+    expect(
+      preprocessor.validate_preprocessor_output("use docker", {
+        source_input: "```\nuse docker\n```"
       })
     ).toEqual({
       classification: "unknown",
