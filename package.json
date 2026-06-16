@@ -38,10 +38,12 @@
     "fixtures:preprocessor:check": "bash scripts/preprocessor-fixtures-check.sh",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "prepack": "npm run build"
   },
   "devDependencies": {
     "@types/node": "^25.9.3",
+    "@vitest/coverage-v8": "^3.2.6",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4"
   }
