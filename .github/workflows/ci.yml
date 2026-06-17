@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      PY_DRAFTER_FIXTURE_REF: 55adfb54b044d00305b74fcc4d78d79185346219
+      PY_DRAFTER_FIXTURE_REF: cab5390602d5b881fca974ff221a92a4f817b512
       PY_DRAFTER_FIXTURE_CHECKOUT: /tmp/context-compiler-directive-drafter-source
 
     steps:
