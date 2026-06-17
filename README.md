@@ -15,7 +15,7 @@ Only [`@rlippmann/context-compiler`](https://www.npmjs.com/package/@rlippmann/co
 
 ## What It Does
 
-Use this package when a host wants help recognizing directive-shaped input before handing control to the deterministic compiler core.
+Use this package when a host wants help recognizing directive-shaped input before handing control to the compiler core.
 
 The public drafting utilities are:
 
@@ -42,8 +42,8 @@ Use the directive drafter as a narrow front-end to the compiler, not as a replac
 Recommended host flow:
 
 1. If `engine.hasPendingClarification()` is `true`, bypass preprocessing and pass the original user input directly to `engine.step(...)`.
-2. Otherwise run `preprocess_heuristic(userInput)` first.
-3. If the heuristic returns `outcome === PREPROCESS_OUTCOME_DIRECTIVE` and `directive !== null`, run `parse_preprocessor_output(...)` or `validate_preprocessor_output(...)` before using that drafted output.
+2. Otherwise run `preprocessHeuristic(userInput)` first.
+3. If the heuristic returns `outcome === PREPROCESS_OUTCOME_DIRECTIVE` and `directive !== null`, run `parsePreprocessorOutput(...)` or `validatePreprocessorOutput(...)` before using that drafted output.
 4. If the heuristic returns `no_directive` or `unknown`, fall back to the original user input.
 5. If a model or another drafter produces directive-like text, validate or parse that output too before passing anything to the compiler.
 6. Pass only validated directive output to `engine.step(...)`.
@@ -102,7 +102,7 @@ The caller supplies that prompt file path.
 
 This package does not ship default or llama prompt resources in the published npm artifact.
 
-If a host wants package-local prompt files, it must ship them itself and pass the resolved path into `render_prompt(...)`.
+If a host wants package-local prompt files, it must ship them itself and pass the resolved path into `renderPrompt(...)`.
 
 ```ts
 import { renderPrompt } from "@rlippmann/context-compiler-directive-drafter";
