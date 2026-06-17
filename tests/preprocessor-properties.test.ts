@@ -90,7 +90,8 @@ function normalizedHeuristicResult(message: string) {
   expect(typeof result).toBe("object");
   expect(result).not.toBeNull();
   expect(["directive", "no_directive", "unknown"]).toContain(result.outcome);
-  expect(result.rule_id).toBeNull();
+  expect(typeof result.rule_id).toBe("string");
+  expect(result.rule_id.length).toBeGreaterThan(0);
 
   if (result.outcome === "directive") {
     expect(typeof result.directive).toBe("string");
