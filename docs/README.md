@@ -1,9 +1,9 @@
-# Documentation
+# Docs
 
-Directive Drafter is acquisition-layer only.
+This directory holds maintainer-oriented documentation for the TypeScript directive-drafter package.
 
-It drafts and proposes candidate directives.
+Available documents:
 
-Context Compiler core remains the authority layer.
+- [conformance.md](/Users/rlippmann/Source/context-compiler-directive-drafter-ts/docs/conformance.md) — fixture sync, drift checks, synced Python contract material, and cross-language parity expectations
 
-This package must not mutate authoritative state or bypass `engine.step(...)`.
+Consumer-facing package guidance lives in the repository [README.md](/Users/rlippmann/Source/context-compiler-directive-drafter-ts/README.md).
