@@ -98,16 +98,25 @@ Treat all drafter or model output as untrusted until it has been validated or pa
 
 The first argument is a prompt file path, not raw template text.
 
-The caller supplies that prompt file path.
+The package ships prompt templates in:
 
-This package does not ship default or llama prompt resources in the published npm artifact.
+- `prompts/default.txt`
+- `prompts/llama.txt`
 
-If a host wants package-local prompt files, it must ship them itself and pass the resolved path into `renderPrompt(...)`.
+You can use those shipped prompt files directly, or supply your own prompt file path.
 
 ```ts
-import { renderPrompt } from "@rlippmann/context-compiler-directive-drafter";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import {
+  renderPrompt
+} from "@rlippmann/context-compiler-directive-drafter";
 
-const rendered = renderPrompt("/absolute/path/to/prompt.txt", {
+const packageEntryUrl = await import.meta.resolve("@rlippmann/context-compiler-directive-drafter");
+const packageRoot = dirname(dirname(fileURLToPath(packageEntryUrl)));
+const defaultPromptPath = join(packageRoot, "prompts", "default.txt");
+
+const rendered = renderPrompt(defaultPromptPath, {
   premise: "concise replies",
   policies: {
     docker: true
