@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 export const PREPROCESSOR_NO_DIRECTIVE_SENTINEL = "<NO_DIRECTIVE>";
 export const PREPROCESS_OUTCOME_DIRECTIVE = "directive";
 export const PREPROCESS_OUTCOME_NO_DIRECTIVE = "no_directive";
@@ -16,7 +18,7 @@ type PreprocessorValidationResult = {
 type PreprocessorHeuristicResult = {
   outcome: PreprocessOutcomeValue;
   directive: string | null;
-  rule_id: string | null;
+  rule_id: string;
 };
 
 type PreprocessorSourceOptions = {
@@ -83,12 +85,35 @@ function noDirective(): PreprocessorValidationResult {
   return { classification: PREPROCESS_OUTCOME_NO_DIRECTIVE, output: null };
 }
 
-function toHeuristicResult(result: PreprocessorValidationResult): PreprocessorHeuristicResult {
+function directiveHeuristic(output: string, rule_id = "canonical.full_match"): PreprocessorHeuristicResult {
   return {
-    outcome: result.classification,
-    directive: result.output,
-    rule_id: null
+    outcome: PREPROCESS_OUTCOME_DIRECTIVE,
+    directive: output,
+    rule_id
   };
+}
+
+function noDirectiveHeuristic(rule_id = "reject.confident_non_directive"): PreprocessorHeuristicResult {
+  return {
+    outcome: PREPROCESS_OUTCOME_NO_DIRECTIVE,
+    directive: null,
+    rule_id
+  };
+}
+
+function unknownHeuristic(rule_id: string): PreprocessorHeuristicResult {
+  return {
+    outcome: PREPROCESS_OUTCOME_UNKNOWN,
+    directive: null,
+    rule_id
+  };
+}
+
+function resolveSourceInput(source_input?: string | PreprocessorSourceOptions): string | undefined {
+  if (typeof source_input === "string") {
+    return source_input;
+  }
+  return source_input?.sourceInput ?? source_input?.source_input;
 }
 
 function normalizeWhitespace(text: string): string {
@@ -321,12 +346,13 @@ function validateTextOutput(rawOutput: string): PreprocessorValidationResult {
 }
 
 export function validate_preprocessor_output(
-  rawOutput: unknown,
-  opts?: PreprocessorSourceOptions
+  raw_output: unknown,
+  source_input: string | PreprocessorSourceOptions | undefined = undefined
 ): PreprocessorValidationResult {
-  const validated = typeof rawOutput === "string" ? validateTextOutput(rawOutput) : validateStructuredOutput(rawOutput);
+  const validated =
+    typeof raw_output === "string" ? validateTextOutput(raw_output) : validateStructuredOutput(raw_output);
 
-  const sourceInput = opts?.sourceInput ?? opts?.source_input;
+  const sourceInput = resolveSourceInput(source_input);
   if (
     sourceInput != null &&
     validated.classification === PREPROCESS_OUTCOME_DIRECTIVE &&
@@ -341,8 +367,11 @@ export function validate_preprocessor_output(
 
 export const validatePreprocessorOutput = validate_preprocessor_output;
 
-export function parse_preprocessor_output(rawOutput: unknown, opts?: PreprocessorSourceOptions): string | null {
-  const validated = validate_preprocessor_output(rawOutput, opts);
+export function parse_preprocessor_output(
+  raw_output: unknown,
+  source_input: string | PreprocessorSourceOptions | undefined = undefined
+): string | null {
+  const validated = validate_preprocessor_output(raw_output, source_input);
   return validated.classification === PREPROCESS_OUTCOME_DIRECTIVE ? validated.output : null;
 }
 
@@ -350,62 +379,67 @@ export const parsePreprocessorOutput = parse_preprocessor_output;
 
 export function preprocess_heuristic(message: string): PreprocessorHeuristicResult {
   if (LIST_MARKER_PATTERN.test(message)) {
-    return toHeuristicResult(unknown());
+    return unknownHeuristic("reject.list_or_enumeration");
   }
 
   const normalized = normalizeMatchInput(message);
   if (message.includes("?") && DIRECTIVE_CUE_PATTERN.test(normalized)) {
-    return toHeuristicResult(unknown());
+    return unknownHeuristic("reject.question_form");
   }
 
   if (META_PREFIX_PATTERN.test(normalized)) {
-    return toHeuristicResult(unknown());
+    return unknownHeuristic("reject.meta_or_reporting");
   }
 
   if (MULTI_SEGMENT_PATTERN.test(normalized)) {
-    return toHeuristicResult(unknown());
+    return unknownHeuristic("reject.multi_segment_or_mixed_prose");
   }
 
   if (MULTI_INSTRUCTION_CASES.has(normalized)) {
-    return toHeuristicResult(unknown());
+    return unknownHeuristic("reject.multi_instruction");
   }
 
   if (isQuotedOrBacktickedExact(message)) {
-    return toHeuristicResult(unknown());
+    return unknownHeuristic("reject.quoted_exact");
   }
 
   const normalizedCandidate = normalizeCandidate(message);
 
   if (NEAR_MISS_ALIAS_CASES.has(normalized) || ADMIN_NEAR_MISS_CASES.has(normalized)) {
-    return toHeuristicResult(unknown());
+    return unknownHeuristic(
+      NEAR_MISS_ALIAS_CASES.has(normalized) ? "reject.near_miss_alias" : "reject.admin_near_miss_alias"
+    );
   }
 
   if (
     (MALFORMED_REPLACEMENT_PATTERN.test(normalizedCandidate) && !normalizedCandidate.includes(" instead of ")) ||
     normalizedCandidate.includes(" in stead of ")
   ) {
-    return toHeuristicResult(unknown());
+    return unknownHeuristic("reject.malformed_replacement_syntax");
   }
 
   if (containsMultipleCandidateDirectives(normalizedCandidate)) {
-    return toHeuristicResult(unknown());
+    return unknownHeuristic("reject.multi_candidate_directive");
   }
 
   if (isAllowedDirective(normalizedCandidate)) {
-    return toHeuristicResult(directive(normalizedCandidate));
+    return directiveHeuristic(normalizedCandidate);
   }
 
   if (DIRECTIVE_CUE_PATTERN.test(normalizedCandidate)) {
-    return toHeuristicResult(unknown());
+    return unknownHeuristic("reject.directive_adjacent_unsafe");
   }
 
-  return toHeuristicResult(noDirective());
+  return noDirectiveHeuristic();
 }
 
 export const preprocessHeuristic = preprocess_heuristic;
 
 function stripLeadingHeaders(promptTemplate: string): string {
   const lines = promptTemplate.split(/\r?\n/);
+  if (/\r?\n$/.test(promptTemplate) && lines.at(-1) === "") {
+    lines.pop();
+  }
   let start = 0;
   while (start < lines.length) {
     const line = lines[start]!;
@@ -436,8 +470,14 @@ function normalizeItem(input: string): string {
   return out;
 }
 
-export function render_prompt(promptTemplate: string, state: EngineState): string | null {
-  if (typeof promptTemplate !== "string") {
+export function render_prompt(path: string, state: EngineState): string | null {
+  if (typeof path !== "string") {
+    return null;
+  }
+  let promptTemplate: string;
+  try {
+    promptTemplate = readFileSync(path, "utf8");
+  } catch {
     return null;
   }
   const stripped = stripLeadingHeaders(promptTemplate);

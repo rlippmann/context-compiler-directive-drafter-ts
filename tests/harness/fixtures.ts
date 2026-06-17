@@ -17,8 +17,53 @@ export interface PreprocessorApiContractFixture {
   id: string;
   kind: "api-contract";
   module: string;
+  forbid_additional_public_exports?: boolean;
   required_exports: string[];
+  forbidden_exports?: string[];
+  exports?: Record<string, PreprocessorApiExportSpec>;
 }
+
+export interface PreprocessorApiContractParameterSpec {
+  name: string;
+  kind: "positional_only" | "positional_or_keyword" | "var_positional" | "keyword_only" | "var_keyword";
+  required: boolean;
+}
+
+export interface PreprocessorApiContractShape {
+  any_of?: PreprocessorApiContractShape[];
+  type?: string | string[];
+  required_keys?: string[];
+  properties?: Record<string, PreprocessorApiContractShape>;
+  enum?: unknown[];
+}
+
+export interface PreprocessorApiCallableProbe {
+  kwargs: Record<string, unknown>;
+}
+
+export interface PreprocessorApiRenderPromptFromFileBehaviorProbe {
+  kind: "render_prompt_from_file";
+  path: string;
+  template: string;
+  state_steps: string[];
+  expect_result: string;
+  reject_substrings?: string[];
+}
+
+export interface PreprocessorApiConstantExportSpec {
+  kind: "constant";
+  value: unknown;
+}
+
+export interface PreprocessorApiCallableExportSpec {
+  kind: "callable";
+  parameters: PreprocessorApiContractParameterSpec[];
+  return_shape?: PreprocessorApiContractShape;
+  shape_probes?: PreprocessorApiCallableProbe[];
+  behavior_probes?: PreprocessorApiRenderPromptFromFileBehaviorProbe[];
+}
+
+export type PreprocessorApiExportSpec = PreprocessorApiConstantExportSpec | PreprocessorApiCallableExportSpec;
 
 export interface NamedFixture<T> {
   name: string;
