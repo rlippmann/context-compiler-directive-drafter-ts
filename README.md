@@ -68,6 +68,26 @@ Run tests:
 npm test
 ```
 
+Consumer install:
+
+```bash
+npm install @rlippmann/context-compiler-directive-drafter
+```
+
+Consumer import:
+
+```ts
+import {
+  preprocess_heuristic,
+  parse_preprocessor_output,
+  validate_preprocessor_output
+} from "@rlippmann/context-compiler-directive-drafter";
+
+const drafted = preprocess_heuristic("use docker");
+const parsed = parse_preprocessor_output("use docker");
+const validated = validate_preprocessor_output("use docker");
+```
+
 ## Preprocessor Fixtures
 
 This repository syncs portable preprocessor fixtures from the Python
