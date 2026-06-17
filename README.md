@@ -1,122 +1,161 @@
 # @rlippmann/context-compiler-directive-drafter
 
-`@rlippmann/context-compiler-directive-drafter` is the TypeScript home for the Context Compiler Directive Drafter preprocessor surface.
+`@rlippmann/context-compiler-directive-drafter` provides TypeScript acquisition-layer utilities for drafting candidate Context Compiler directives from natural-language input.
 
-The Context Compiler core is the Authority Layer.
+It helps a host:
 
-The Directive Drafter is the Acquisition Layer.
+- draft candidate directives from raw user input
+- validate or reject directive-like model output
+- parse only safe directive output for handoff to the compiler
+- render prompt templates from saved compiler state
 
-Drafting proposes; authority decides.
+Drafting proposes and `context-compiler` decides.
 
-The Directive Drafter never mutates authoritative state.
+Only [`@rlippmann/context-compiler`](https://www.npmjs.com/package/@rlippmann/context-compiler) may apply directives and mutate saved authoritative state through `engine.step(...)`.
 
-The Directive Drafter never bypasses `engine.step(...)`.
+## What It Does
 
-Only the Context Compiler core may apply directives or change authoritative state.
+Use this package when a host wants help recognizing directive-shaped input before handing control to the compiler core.
 
-## Status
+The public drafting utilities are:
 
-This package currently implements the TypeScript port of the directive-drafter preprocessor surface:
+- `preprocessHeuristic(message)` -> conservative heuristic pass over raw user input
+- `validatePreprocessorOutput(rawOutput, sourceInput?)` -> validate candidate directive-like output
+- `parsePreprocessorOutput(rawOutput, sourceInput?)` -> return a validated directive string or `null`
+- `renderPrompt(path, state)` -> render a prompt template file with current compiler state
 
-- `preprocess_heuristic`
-- `validate_preprocessor_output`
-- `parse_preprocessor_output`
-- `render_prompt`
+This README uses the camelCase entry points because they are the more idiomatic TypeScript surface.
 
-Those behaviors are validated against synced Python `context-compiler-directive-drafter` fixtures.
+## Relationship To @rlippmann/context-compiler
 
-Still out of scope:
+Use this package alongside `@rlippmann/context-compiler` when you want a drafting layer in front of the core engine.
 
-- future acquisition workflows
-- CLI/REPL behavior
-- `draft_directive()`
-- authority-layer behavior
+- `@rlippmann/context-compiler-directive-drafter` helps acquire candidate directive input
+- `@rlippmann/context-compiler` decides whether that input is allowed and mutates authoritative state
 
-## Design boundary
+If you do not need acquisition-layer drafting, use `@rlippmann/context-compiler` directly.
 
-This package should:
+## Safe Usage Pattern
 
-- propose candidate directives from natural-language input
-- keep those proposals non-authoritative
-- hand off any authoritative decision to the Context Compiler core
+Use the directive drafter as a narrow front-end to the compiler, not as a replacement for it.
 
-This package must never treat drafted output as equivalent to an engine decision.
+Recommended host flow:
+
+1. If `engine.hasPendingClarification()` is `true`, bypass preprocessing and pass the original user input directly to `engine.step(...)`.
+2. Otherwise run `preprocessHeuristic(userInput)` first.
+3. If the heuristic returns `outcome === PREPROCESS_OUTCOME_DIRECTIVE` and `directive !== null`, run `parsePreprocessorOutput(...)` or `validatePreprocessorOutput(...)` before using that drafted output.
+4. If the heuristic returns `no_directive` or `unknown`, fall back to the original user input.
+5. If a model or another drafter produces directive-like text, validate or parse that output too before passing anything to the compiler.
+6. Pass only validated directive output to `engine.step(...)`.
+
+```ts
+import { createEngine } from "@rlippmann/context-compiler";
+import {
+  PREPROCESS_OUTCOME_DIRECTIVE,
+  parsePreprocessorOutput,
+  preprocessHeuristic
+} from "@rlippmann/context-compiler-directive-drafter";
+
+const engine = createEngine();
+
+export function stepWithOptionalDrafter(userInput: string) {
+  if (engine.hasPendingClarification()) {
+    return engine.step(userInput);
+  }
+
+  const heuristic = preprocessHeuristic(userInput);
+  let engineInput = userInput;
+
+  if (heuristic.outcome === PREPROCESS_OUTCOME_DIRECTIVE && heuristic.directive !== null) {
+    const parsed = parsePreprocessorOutput(heuristic.directive, { sourceInput: userInput });
+    if (parsed !== null) {
+      engineInput = parsed;
+    }
+  }
+
+  return engine.step(engineInput);
+}
+```
+
+## Validation Boundary
+
+This package is intentionally conservative.
+
+Safety behavior is false-negative-preferred:
+
+- ambiguous, mixed-intent, quoted, reported, malformed, or boundary-unsafe inputs should resolve to `unknown` or `null`
+- source-aware parsing rejects unsafe rewrites instead of trying to be helpful
+- drafted output is never equivalent to a compiler decision until the compiler accepts it
+
+Treat all drafter or model output as untrusted until it has been validated or parsed successfully.
+
+## renderPrompt(path, state)
+
+`renderPrompt(path, state)` reads a prompt template file from `path`, removes leading blank/header comment lines, and replaces:
+
+- `<NULL_OR_VALUE>` with the current premise or `null`
+- `<SET OF CURRENT POLICY ITEMS>` with normalized policy items or `(none)`
+
+The first argument is a prompt file path, not raw template text.
+
+The package ships prompt templates in:
+
+- `prompts/default.txt`
+- `prompts/llama.txt`
+
+You can use those shipped prompt files directly, or supply your own prompt file path.
+
+```ts
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import {
+  renderPrompt
+} from "@rlippmann/context-compiler-directive-drafter";
+
+const packageEntryUrl = await import.meta.resolve("@rlippmann/context-compiler-directive-drafter");
+const packageRoot = dirname(dirname(fileURLToPath(packageEntryUrl)));
+const defaultPromptPath = join(packageRoot, "prompts", "default.txt");
+
+const rendered = renderPrompt(defaultPromptPath, {
+  premise: "concise replies",
+  policies: {
+    docker: true
+  }
+});
+```
+
+## Boundary
+
+The directive drafter:
+
+- drafts candidate directives
+- keeps drafting output non-authoritative
+- helps a host acquire directive-shaped compiler input
+
+The directive drafter does not:
+
+- mutate authoritative state
+- replace `engine.step(...)`
+- decide whether a state change is allowed
+- provide broad natural-language memory or persistence
+- run models or own provider integration
+
+## Install
+
+```bash
+npm install @rlippmann/context-compiler-directive-drafter @rlippmann/context-compiler
+```
 
 ## Development
 
-Install dependencies:
-
 ```bash
 npm install
-```
-
-Run the build:
-
-```bash
 npm run build
-```
-
-Run type checking:
-
-```bash
 npm run typecheck
-```
-
-Run tests:
-
-```bash
 npm test
 ```
 
-Consumer install:
+Maintainer docs:
 
-```bash
-npm install @rlippmann/context-compiler-directive-drafter
-```
-
-Consumer import:
-
-```ts
-import {
-  preprocess_heuristic,
-  parse_preprocessor_output,
-  validate_preprocessor_output
-} from "@rlippmann/context-compiler-directive-drafter";
-
-const drafted = preprocess_heuristic("use docker");
-const parsed = parse_preprocessor_output("use docker");
-const validated = validate_preprocessor_output("use docker");
-```
-
-## Preprocessor Fixtures
-
-This repository syncs portable preprocessor fixtures from the Python
-`context-compiler-directive-drafter` source corpus into
-`tests/fixtures/preprocessor`.
-
-Refresh local fixtures:
-
-```bash
-PREPROCESSOR_FIXTURES_SOURCE=/path/to/context-compiler-directive-drafter/tests/fixtures/preprocessor npm run fixtures:preprocessor:sync
-```
-
-Check for fixture drift:
-
-```bash
-PREPROCESSOR_FIXTURES_SOURCE=/path/to/context-compiler-directive-drafter/tests/fixtures/preprocessor npm run fixtures:preprocessor:check
-```
-
-CI should provide `PREPROCESSOR_FIXTURES_SOURCE` explicitly as well. This
-matches the existing `context-compiler-ts` pattern of requiring an explicit
-fixture source for drift checks rather than silently defaulting to a local path.
-
-Sync also records the upstream Python directive-drafter commit in
-`tests/fixtures/preprocessor/.source-commit`. Drift checks verify both:
-
-- synced fixture files still match the source checkout
-- the recorded upstream commit still matches the source checkout used for the check
-
-`public-api-v1.json` is synced from Python too. If this package needs to handle
-module/package naming differences, that should happen narrowly in the test
-harness rather than by excluding the shared API-contract fixture from sync or
-drift checks.
+- [docs/README.md](/Users/rlippmann/Source/context-compiler-directive-drafter-ts/docs/README.md)
+- [docs/conformance.md](/Users/rlippmann/Source/context-compiler-directive-drafter-ts/docs/conformance.md)
