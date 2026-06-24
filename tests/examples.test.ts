@@ -6,16 +6,17 @@ import { runPromptRenderingExample } from "../examples/prompt-rendering.js";
 describe("package-owned examples", () => {
   it("keeps the basic usage example aligned with the public API", () => {
     expect(runBasicUsageExample()).toEqual({
-      sourceInput: "Use Docker.",
+      sourceInput: "Please use Docker for container examples.",
       heuristic: {
-        outcome: "directive",
-        directive: "use docker",
-        rule_id: "canonical.full_match"
+        outcome: "unknown",
+        directive: null,
+        rule_id: "reject.directive_adjacent_unsafe"
       },
-      parsedDirective: "use docker",
+      parsedDirective: null,
+      modelOutput: "use docker",
       validation: {
-        classification: "directive",
-        output: "use docker"
+        classification: "unknown",
+        output: null
       }
     });
   });
@@ -25,7 +26,7 @@ describe("package-owned examples", () => {
 
     expect(result.promptPath.endsWith("/prompts/default.txt")).toBe(true);
     expect(result.renderedPrompt).toContain("concise replies");
-    expect(result.renderedPrompt).toContain("docker, shell");
+    expect(result.renderedPrompt).toContain("docker, podman");
     expect(result.renderedPrompt).not.toContain("<NULL_OR_VALUE>");
     expect(result.renderedPrompt).not.toContain("<SET OF CURRENT POLICY ITEMS>");
   });

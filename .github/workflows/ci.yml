@@ -44,6 +44,9 @@ jobs:
           echo "Using PREPROCESSOR_FIXTURES_SOURCE=${PREPROCESSOR_FIXTURES_SOURCE}"
           npm run fixtures:preprocessor:check
 
+      - name: Check acquisition-layer boundaries
+        run: npm run check:boundaries
+
       - name: Build
         run: npm run build
 

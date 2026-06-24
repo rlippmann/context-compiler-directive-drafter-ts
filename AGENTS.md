@@ -39,6 +39,7 @@ Be explicit that drafting proposes and `context-compiler` decides.
 - Do not introduce flows that mutate authoritative state outside `context-compiler`.
 - Do not describe candidate drafting output as equivalent to an engine decision.
 - Keep the handoff boundary explicit between drafting output and compiler-owned application.
+- Keep `src/**` and package-owned `examples/**` compatible with the boundary guard script by avoiding direct `createEngine(...)`, `engine.step(...)`, `engine.state`, `.state =`, and `@rlippmann/context-compiler` imports there.
 
 ## Scope constraints
 

@@ -38,6 +38,7 @@
   ],
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "check:boundaries": "node scripts/check-boundaries.mjs",
     "fixtures:preprocessor:sync": "bash scripts/preprocessor-fixtures-sync.sh",
     "fixtures:preprocessor:check": "bash scripts/preprocessor-fixtures-check.sh",
     "typecheck": "tsc --noEmit -p tsconfig.json",
