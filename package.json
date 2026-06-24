@@ -1,6 +1,6 @@
 {
   "name": "@rlippmann/context-compiler-directive-drafter",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Draft, validate, and parse candidate Context Compiler directives in TypeScript.",
   "keywords": [
     "context-compiler",
