@@ -105,9 +105,60 @@ Do not rely solely on coverage metrics.
 ## Documentation
 README and package-listing docs are part of the project contract.
 
+Documentation is not commentary.
+
 Treat documentation requirements in a task as acceptance criteria.
 
+Treat user-visible documentation as a behavioral contract, not as optional narrative.
+
+Do not treat documentation as illustrative unless explicitly stated.
+Do not silently change documented behavior because implementation is easier.
+Do not silently rewrite docs to match unintended behavior.
+Do not update documentation merely to match unintended behavior.
+Do not weaken or remove user-facing tests to accommodate implementation.
+
+This repository is the canonical documentation owner for the TypeScript
+directive-drafter package.
+
+Keep the ownership boundary explicit:
+- `context-compiler-directive-drafter-ts` owns package-level drafting docs, prompt/resource usage docs, package API docs, conformance/parity docs, and package-scoped examples
+- `context-compiler` owns compiler behavior, engine semantics, authoritative state mutation, and directive application rules
+- `context-compiler-example-integrations` owns runnable host orchestration examples, starter-app integration recipes, and broader external integration walkthroughs
+
+Documentation examples explicitly referenced by a task are part of the expected deliverable.
+
+If implementation, documentation, examples, tests, fixtures, conformance docs,
+and smoke tests disagree:
+
+1. Public package behavior, fixtures, and parity/conformance expectations are authoritative unless the task explicitly changes them.
+2. Report the mismatch.
+3. Request review before changing documented behavior.
+4. Do not resolve disagreements by silently changing docs.
+
+Drift detection is required work, not optional polish.
+
+When changing behavior or docs, actively check for drift across:
+- README contract language
+- package-level examples and documented behavior
+- prompt and resource loading behavior
+- exported package surface and package-listing claims
+- tests, fixtures, and captured examples
+- conformance and parity docs
+- smoke tests and their documented package assumptions
+
+If you find drift:
+- report it clearly
+- fix the contract or implementation only in the canonically owned location
+- do not preserve duplicate or conflicting wording across files
+- do not move compiler-owned semantics into this repository unless explicitly instructed
+- do not move runnable host orchestration guidance into this repository when it belongs in `context-compiler-example-integrations`
+
+## Documentation style
+
 For README and package-listing docs, explain user-visible drafting behavior before architecture.
+
+Lead with what the package does, how users or hosts use it, and how it relates
+to `context-compiler` before discussing implementation structure or project history.
 
 Be explicit that drafting proposes and `context-compiler` decides.
 
@@ -122,12 +173,23 @@ Avoid describing drafting as:
 - validation authority
 - state mutation
 - authoritative application
+- a replacement for `context-compiler`
+- the owner of compiler decisions
+- an "experimental preprocessor" when referring to the current public package surface unless the task explicitly requires historical terminology
 
 Avoid describing features only in architectural terms when a behavior-first explanation is possible.
+
+Avoid architecture-archeology framing in README-style docs when present-tense ownership and behavior are what users need.
+
+Prefer camelCase names in TypeScript README and package-level examples unless you are documenting parity, fixture, or contract names that intentionally use snake_case.
 
 Prefer direct subjects and strong verbs.
 Avoid noun stacks and passive phrasing when a simpler active sentence is clearer.
 Use simpler wording unless technical precision requires formal terminology.
+
+Do not simplify contract or conformance wording in ways that blur required behavior, ownership boundaries, or authoritative semantics.
+
+Do not rewrite captured outputs, fixture-sensitive examples, or smoke-test-sensitive package examples unless explicitly asked.
 
 ## Tooling
 Use the project's existing tooling:

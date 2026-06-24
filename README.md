@@ -1,109 +1,111 @@
 # @rlippmann/context-compiler-directive-drafter
 
-`@rlippmann/context-compiler-directive-drafter` provides TypeScript acquisition-layer utilities for drafting candidate Context Compiler directives from natural-language input.
+## Overview
 
-It helps a host:
+Sometimes a user message looks like an instruction to change persistent conversation behavior, but sometimes it is only:
 
-- draft candidate directives from raw user input
-- validate or reject directive-like model output
-- parse only safe directive output for handoff to the compiler
-- render prompt templates from saved compiler state
+- a question
+- a quoted example
+- reported speech
+- mixed-intent text
+- malformed directive-like text
 
-Drafting proposes and `context-compiler` decides.
+A host needs a safe way to tell the difference before treating that message like a real directive.
 
-Only [`@rlippmann/context-compiler`](https://www.npmjs.com/package/@rlippmann/context-compiler) may apply directives and mutate saved authoritative state through `engine.step(...)`.
+`@rlippmann/context-compiler-directive-drafter` helps a TypeScript host turn natural-language requests into candidate Context Compiler directives without guessing when the message is ambiguous.
+
+## Install
+
+```bash
+npm install @rlippmann/context-compiler-directive-drafter @rlippmann/context-compiler
+```
 
 ## What It Does
 
-Use this package when a host wants help recognizing directive-shaped input before handing control to the compiler core.
+This package gives a host a conservative drafting layer that can:
 
-The public drafting utilities are:
+- recognize directive-shaped user input
+- draft a candidate directive from that input
+- validate candidate output from another drafting step
+- parse safe candidate directives from raw output
+- render drafting prompts for LLM-based directive drafting
 
-- `preprocessHeuristic(message)` -> conservative heuristic pass over raw user input
-- `validatePreprocessorOutput(rawOutput, sourceInput?)` -> validate candidate directive-like output
-- `parsePreprocessorOutput(rawOutput, sourceInput?)` -> return a validated directive string or `null`
-- `renderPrompt(path, state)` -> render a prompt template file with current compiler state
+It prefers `unknown` or `null` over unsafe rewrites.
 
-This README uses the camelCase entry points because they are the more idiomatic TypeScript surface.
+## Example
 
-## Relationship To @rlippmann/context-compiler
+If a user says:
 
-Use this package alongside `@rlippmann/context-compiler` when you want a drafting layer in front of the core engine.
+> Please use Docker for container examples.
 
-- `@rlippmann/context-compiler-directive-drafter` helps acquire candidate directive input
-- `@rlippmann/context-compiler` decides whether that input is allowed and mutates authoritative state
+your host may want a candidate directive like:
 
-If you do not need acquisition-layer drafting, use `@rlippmann/context-compiler` directly.
+> use docker
 
-## Safe Usage Pattern
-
-Use the directive drafter as a narrow front-end to the compiler, not as a replacement for it.
-
-Recommended host flow:
-
-1. If `engine.hasPendingClarification()` is `true`, bypass preprocessing and pass the original user input directly to `engine.step(...)`.
-2. Otherwise run `preprocessHeuristic(userInput)` first.
-3. If the heuristic returns `outcome === PREPROCESS_OUTCOME_DIRECTIVE` and `directive !== null`, run `parsePreprocessorOutput(...)` or `validatePreprocessorOutput(...)` before using that drafted output.
-4. If the heuristic returns `no_directive` or `unknown`, fall back to the original user input.
-5. If a model or another drafter produces directive-like text, validate or parse that output too before passing anything to the compiler.
-6. Pass only validated directive output to `engine.step(...)`.
+You can draft and validate that candidate like this:
 
 ```ts
-import { createEngine } from "@rlippmann/context-compiler";
 import {
-  PREPROCESS_OUTCOME_DIRECTIVE,
   parsePreprocessorOutput,
   preprocessHeuristic
 } from "@rlippmann/context-compiler-directive-drafter";
 
-const engine = createEngine();
+const userMessage = "Please use Docker for container examples.";
+const heuristic = preprocessHeuristic(userMessage);
 
-export function stepWithOptionalDrafter(userInput: string) {
-  if (engine.hasPendingClarification()) {
-    return engine.step(userInput);
-  }
+const candidate =
+  heuristic.directive === null
+    ? null
+    : parsePreprocessorOutput(heuristic.directive, { sourceInput: userMessage });
 
-  const heuristic = preprocessHeuristic(userInput);
-  let engineInput = userInput;
-
-  if (heuristic.outcome === PREPROCESS_OUTCOME_DIRECTIVE && heuristic.directive !== null) {
-    const parsed = parsePreprocessorOutput(heuristic.directive, { sourceInput: userInput });
-    if (parsed !== null) {
-      engineInput = parsed;
-    }
-  }
-
-  return engine.step(engineInput);
+if (candidate !== null) {
+  console.log("Candidate directive:", candidate);
+} else {
+  console.log("No canonical directive found.");
 }
 ```
 
-## Validation Boundary
+If another drafting step already produced candidate output, validate it before you use it:
 
-This package is intentionally conservative.
+```ts
+import {
+  validatePreprocessorOutput
+} from "@rlippmann/context-compiler-directive-drafter";
 
-Safety behavior is false-negative-preferred:
+const validation = validatePreprocessorOutput("use docker", {
+  sourceInput: "Please use Docker for container examples."
+});
 
-- ambiguous, mixed-intent, quoted, reported, malformed, or boundary-unsafe inputs should resolve to `unknown` or `null`
-- source-aware parsing rejects unsafe rewrites instead of trying to be helpful
-- drafted output is never equivalent to a compiler decision until the compiler accepts it
+if (validation.classification === "directive") {
+  console.log(validation.output);
+}
+```
 
-Treat all drafter or model output as untrusted until it has been validated or parsed successfully.
+## API
 
-## renderPrompt(path, state)
+This README uses the camelCase TypeScript entry points.
 
-`renderPrompt(path, state)` reads a prompt template file from `path`, removes leading blank/header comment lines, and replaces:
+- `preprocessHeuristic(message)` drafts a conservative candidate directive from raw user input
+- `validatePreprocessorOutput(rawOutput, sourceInput?)` classifies candidate output as `directive`, `no_directive`, or `unknown`
+- `parsePreprocessorOutput(rawOutput, sourceInput?)` returns a validated directive string or `null`
+- `renderPrompt(path, state)` renders a prompt that an LLM can use to draft candidate directives from user input using the current compiler state
+- `PREPROCESSOR_NO_DIRECTIVE_SENTINEL`, `PREPROCESS_OUTCOME_DIRECTIVE`, `PREPROCESS_OUTCOME_NO_DIRECTIVE`, and `PREPROCESS_OUTCOME_UNKNOWN` expose the public runtime contract constants
 
-- `<NULL_OR_VALUE>` with the current premise or `null`
-- `<SET OF CURRENT POLICY ITEMS>` with normalized policy items or `(none)`
+### Prompt Resources
 
-The first argument is a prompt file path, not raw template text.
+Use `renderPrompt(path, state)` when your host wants an LLM to help draft candidate directives from user input.
 
-The package ships prompt templates in:
+The package ships:
 
 - `prompts/default.txt`
 - `prompts/llama.txt`
 
-You can use those shipped prompt files directly, or supply your own prompt file path.
+`renderPrompt(path, state)`:
+
+- reads a prompt template file from `path`
+- removes leading blank or header comment lines
+- replaces `<NULL_OR_VALUE>` with the current premise or `null`
+- replaces `<SET OF CURRENT POLICY ITEMS>` with normalized policy items or `(none)`
 
 ```ts
 import { dirname, join } from "node:path";
@@ -112,7 +114,9 @@ import {
   renderPrompt
 } from "@rlippmann/context-compiler-directive-drafter";
 
-const packageEntryUrl = await import.meta.resolve("@rlippmann/context-compiler-directive-drafter");
+const packageEntryUrl = await import.meta.resolve(
+  "@rlippmann/context-compiler-directive-drafter"
+);
 const packageRoot = dirname(dirname(fileURLToPath(packageEntryUrl)));
 const defaultPromptPath = join(packageRoot, "prompts", "default.txt");
 
@@ -124,27 +128,24 @@ const rendered = renderPrompt(defaultPromptPath, {
 });
 ```
 
-## Boundary
+If a model uses a rendered prompt to draft output, validate that output with
+`parsePreprocessorOutput(...)` or `validatePreprocessorOutput(...)` before you
+use it.
 
-The directive drafter:
+## Relationship To Context Compiler
 
-- drafts candidate directives
-- keeps drafting output non-authoritative
-- helps a host acquire directive-shaped compiler input
+This package drafts candidate directives.
 
-The directive drafter does not:
+[`@rlippmann/context-compiler`](https://www.npmjs.com/package/@rlippmann/context-compiler) decides whether those directives are allowed and applies them through
+`engine.step(...)`.
 
-- mutate authoritative state
-- replace `engine.step(...)`
-- decide whether a state change is allowed
-- provide broad natural-language memory or persistence
-- run models or own provider integration
+In short:
 
-## Install
+- this package helps a host recognize and validate candidate directives
+- `@rlippmann/context-compiler` owns authoritative state changes
 
-```bash
-npm install @rlippmann/context-compiler-directive-drafter @rlippmann/context-compiler
-```
+For runnable host orchestration examples, use
+`context-compiler-example-integrations`.
 
 ## Development
 
@@ -155,7 +156,11 @@ npm run typecheck
 npm test
 ```
 
-Maintainer docs:
+## Maintainer Notes
+
+Shared parity fixtures and contract material may use snake_case where the cross-language contract requires it. The TypeScript consumer-facing README and examples prefer camelCase names.
+
+Maintainer references:
 
 - [docs/README.md](/Users/rlippmann/Source/context-compiler-directive-drafter-ts/docs/README.md)
 - [docs/conformance.md](/Users/rlippmann/Source/context-compiler-directive-drafter-ts/docs/conformance.md)
