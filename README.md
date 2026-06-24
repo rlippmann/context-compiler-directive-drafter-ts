@@ -132,6 +132,8 @@ If a model uses a rendered prompt to draft output, validate that output with
 `parsePreprocessorOutput(...)` or `validatePreprocessorOutput(...)` before you
 use it.
 
+For complete examples, see: [examples/basic-usage.ts](/Users/rlippmann/Source/context-compiler-directive-drafter-ts/examples/basic-usage.ts) and [examples/prompt-rendering.ts](/Users/rlippmann/Source/context-compiler-directive-drafter-ts/examples/prompt-rendering.ts)
+
 ## Relationship To Context Compiler
 
 This package drafts candidate directives.

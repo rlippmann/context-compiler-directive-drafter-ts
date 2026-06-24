@@ -16,10 +16,10 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
@@ -43,6 +43,9 @@ jobs:
         run: |
           echo "Using PREPROCESSOR_FIXTURES_SOURCE=${PREPROCESSOR_FIXTURES_SOURCE}"
           npm run fixtures:preprocessor:check
+
+      - name: Check acquisition-layer boundaries
+        run: npm run check:boundaries
 
       - name: Build
         run: npm run build
