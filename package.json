@@ -46,7 +46,7 @@
     "test:coverage": "vitest run --coverage",
     "smoke:pack-import": "rm -rf /tmp/context-compiler-directive-drafter-pack-smoke && mkdir -p /tmp/context-compiler-directive-drafter-pack-smoke && npm pack --pack-destination /tmp/context-compiler-directive-drafter-pack-smoke && node scripts/package-import-smoke.mjs /tmp/context-compiler-directive-drafter-pack-smoke",
     "prepack": "npm run build",
-    "lint:md": "npx --yes markdownlint-cli2"
+    "lint:md": "npx --yes markdownlint-cli2@0.23.0"
   },
   "devDependencies": {
     "@types/node": "^25.9.3",
