@@ -25,12 +25,20 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      PY_DRAFTER_FIXTURE_REF: cab5390602d5b881fca974ff221a92a4f817b512
       PY_DRAFTER_FIXTURE_CHECKOUT: /tmp/context-compiler-directive-drafter-source
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
+
+      - name: Resolve Python directive-drafter fixture ref
+        run: |
+          PY_DRAFTER_FIXTURE_REF="$(tr -d '[:space:]' < tests/fixtures/preprocessor/.source-commit)"
+          if ! [[ "${PY_DRAFTER_FIXTURE_REF}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Invalid Python directive-drafter fixture ref: ${PY_DRAFTER_FIXTURE_REF}" >&2
+            exit 1
+          fi
+          echo "PY_DRAFTER_FIXTURE_REF=${PY_DRAFTER_FIXTURE_REF}" >> "${GITHUB_ENV}"
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
