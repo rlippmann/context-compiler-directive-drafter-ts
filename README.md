@@ -56,7 +56,7 @@ const heuristic = preprocessHeuristic(userMessage);
 const candidate =
   heuristic.directive === null
     ? null
-    : parsePreprocessorOutput(heuristic.directive, { sourceInput: userMessage });
+    : parsePreprocessorOutput(heuristic.directive);
 
 if (candidate !== null) {
   console.log("Candidate directive:", candidate);
@@ -72,9 +72,7 @@ import {
   validatePreprocessorOutput
 } from "@rlippmann/context-compiler-directive-drafter";
 
-const validation = validatePreprocessorOutput("use docker", {
-  sourceInput: "Please use Docker for container examples."
-});
+const validation = validatePreprocessorOutput("use docker");
 
 if (validation.classification === "directive") {
   console.log(validation.output);
@@ -86,8 +84,8 @@ if (validation.classification === "directive") {
 This README uses the camelCase TypeScript entry points.
 
 - `preprocessHeuristic(message)` drafts a conservative candidate directive from raw user input
-- `validatePreprocessorOutput(rawOutput, sourceInput?)` classifies candidate output as `directive`, `no_directive`, or `unknown`
-- `parsePreprocessorOutput(rawOutput, sourceInput?)` returns a validated directive string or `null`
+- `validatePreprocessorOutput(rawOutput)` classifies candidate output as `directive`, `no_directive`, or `unknown`
+- `parsePreprocessorOutput(rawOutput)` returns a validated directive string or `null`
 - `renderPrompt(path, state)` renders a prompt that an LLM can use to draft candidate directives from user input using the current compiler state
 - `PREPROCESSOR_NO_DIRECTIVE_SENTINEL`, `PREPROCESS_OUTCOME_DIRECTIVE`, `PREPROCESS_OUTCOME_NO_DIRECTIVE`, and `PREPROCESS_OUTCOME_UNKNOWN` expose the public runtime contract constants
 
@@ -128,9 +126,9 @@ const rendered = renderPrompt(defaultPromptPath, {
 });
 ```
 
-If a model uses a rendered prompt to draft output, validate that output with
-`parsePreprocessorOutput(...)` or `validatePreprocessorOutput(...)` before you
-use it.
+If a model uses a rendered prompt to draft output, validate that output itself
+with `parsePreprocessorOutput(...)` or `validatePreprocessorOutput(...)` before
+you use it.
 
 For complete examples, see: [examples/basic-usage.ts](/Users/rlippmann/Source/context-compiler-directive-drafter-ts/examples/basic-usage.ts) and [examples/prompt-rendering.ts](/Users/rlippmann/Source/context-compiler-directive-drafter-ts/examples/prompt-rendering.ts)
 

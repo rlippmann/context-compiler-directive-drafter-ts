@@ -57,18 +57,8 @@ const rawOutputs: unknown[] = [
   { nested: { value: "use docker" } }
 ];
 
-const sourceInputs = [
-  undefined,
-  "use docker",
-  "example: use docker",
-  "can you use docker?",
-  "docs say \"use docker\"",
-  "clear state; reset policies",
-  "~~~\nuse docker\n~~~"
-] as const;
-
-function normalizedValidatorResult(rawOutput: unknown, sourceInput?: string) {
-  const result = preprocessor.validate_preprocessor_output(rawOutput, sourceInput == null ? undefined : { source_input: sourceInput });
+function normalizedValidatorResult(rawOutput: unknown) {
+  const result = preprocessor.validate_preprocessor_output(rawOutput);
 
   expect(typeof result).toBe("object");
   expect(result).not.toBeNull();
@@ -106,30 +96,20 @@ function normalizedHeuristicResult(message: string) {
 describe("preprocessor property-style invariants", () => {
   it("validator is deterministic and preserves non-directive null outputs", () => {
     for (const rawOutput of rawOutputs) {
-      for (const sourceInput of sourceInputs) {
-        const first = normalizedValidatorResult(rawOutput, sourceInput);
-        const second = normalizedValidatorResult(rawOutput, sourceInput);
-        expect(second).toEqual(first);
-      }
+      const first = normalizedValidatorResult(rawOutput);
+      const second = normalizedValidatorResult(rawOutput);
+      expect(second).toEqual(first);
     }
   });
 
   it("parser is deterministic across representative raw outputs", () => {
     for (const rawOutput of rawOutputs) {
-      for (const sourceInput of sourceInputs) {
-        const first = preprocessor.parse_preprocessor_output(
-          rawOutput,
-          sourceInput == null ? undefined : { source_input: sourceInput }
-        );
-        const second = preprocessor.parse_preprocessor_output(
-          rawOutput,
-          sourceInput == null ? undefined : { source_input: sourceInput }
-        );
+      const first = preprocessor.parse_preprocessor_output(rawOutput);
+      const second = preprocessor.parse_preprocessor_output(rawOutput);
 
-        expect(second).toBe(first);
-        if (first !== null) {
-          expect(preprocessor.parse_preprocessor_output(first)).toBe(first);
-        }
+      expect(second).toBe(first);
+      if (first !== null) {
+        expect(preprocessor.parse_preprocessor_output(first)).toBe(first);
       }
     }
   });
@@ -157,15 +137,8 @@ describe("preprocessor property-style invariants", () => {
       () => preprocessor.preprocess_heuristic("example: use docker"),
       () => preprocessor.validate_preprocessor_output(null),
       () => preprocessor.validate_preprocessor_output({ classification: "directive", output: "use docker" }),
-      () =>
-        preprocessor.validate_preprocessor_output("use docker", {
-          source_input: "docs say \"use docker\""
-        }),
       () => preprocessor.parse_preprocessor_output(undefined),
-      () =>
-        preprocessor.parse_preprocessor_output("use docker", {
-          source_input: "clear state; reset policies"
-        })
+      () => preprocessor.parse_preprocessor_output("use docker")
     ];
 
     for (const call of calls) {

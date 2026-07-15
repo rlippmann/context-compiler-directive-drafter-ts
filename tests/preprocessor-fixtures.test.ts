@@ -15,14 +15,8 @@ import {
 
 type PreprocessorLike = {
   preprocess_heuristic?: (message: string) => unknown;
-  validate_preprocessor_output?: (
-    raw: unknown,
-    source_input?: string | { source_input?: string; sourceInput?: string }
-  ) => unknown;
-  parse_preprocessor_output?: (
-    raw: unknown,
-    source_input?: string | { source_input?: string; sourceInput?: string }
-  ) => string | null;
+  validate_preprocessor_output?: (raw: unknown) => unknown;
+  parse_preprocessor_output?: (raw: unknown) => string | null;
 };
 
 type RenderPromptState = {
@@ -49,10 +43,6 @@ const expectedPythonRuntimeExports = [
   "render_prompt",
   "validate_preprocessor_output"
 ] as const;
-
-function sourceInputOptions(sourceInput?: string): { source_input?: string } {
-  return sourceInput == null ? {} : { source_input: sourceInput };
-}
 
 function normalizeValidatorResult(result: unknown): { classification: string; output: string | null } {
   if (typeof result !== "object" || result === null) {
@@ -367,24 +357,12 @@ describe("preprocessor api contract", () => {
     expect(preprocessor.parsePreprocessorOutput).toBe(preprocessor.parse_preprocessor_output);
   });
 
-  it("supports both source_input and sourceInput options with identical behavior", () => {
-    const rawOutput = "use docker";
-    const sourceInput = "can you use docker?";
-
-    expect(preprocessor.validatePreprocessorOutput(rawOutput, { source_input: sourceInput })).toEqual(
-      preprocessor.validatePreprocessorOutput(rawOutput, { sourceInput })
+  it("keeps camelCase aliases aligned with the corrected snake_case signatures", () => {
+    expect(preprocessor.validatePreprocessorOutput("use docker")).toEqual(
+      preprocessor.validate_preprocessor_output("use docker")
     );
-    expect(preprocessor.parsePreprocessorOutput(rawOutput, { source_input: sourceInput })).toEqual(
-      preprocessor.parsePreprocessorOutput(rawOutput, { sourceInput })
-    );
-  });
-
-  it("accepts canonical snake_case callable arguments directly", () => {
-    expect(preprocessor.validate_preprocessor_output("use docker", "use docker")).toEqual(
-      preprocessor.validate_preprocessor_output("use docker", { source_input: "use docker" })
-    );
-    expect(preprocessor.parse_preprocessor_output("use docker", "use docker")).toEqual(
-      preprocessor.parse_preprocessor_output("use docker", { source_input: "use docker" })
+    expect(preprocessor.parsePreprocessorOutput("use docker")).toEqual(
+      preprocessor.parse_preprocessor_output("use docker")
     );
   });
 
@@ -486,11 +464,7 @@ describe("preprocessor fixtures", () => {
           throw new Error("Missing validate_preprocessor_output export");
         }
 
-        const actual = normalizeValidatorResult(
-          pre.validate_preprocessor_output(fixture.payload.raw_output, {
-            ...sourceInputOptions(fixture.payload.source_input)
-          })
-        );
+        const actual = normalizeValidatorResult(pre.validate_preprocessor_output(fixture.payload.raw_output));
         expect(actual).toEqual(fixture.payload.expected);
         return;
       }
@@ -499,9 +473,7 @@ describe("preprocessor fixtures", () => {
         throw new Error("Missing parse_preprocessor_output export");
       }
 
-      const parsed = pre.parse_preprocessor_output(fixture.payload.raw_output, {
-        ...sourceInputOptions(fixture.payload.source_input)
-      });
+      const parsed = pre.parse_preprocessor_output(fixture.payload.raw_output);
       expect(parsed).toEqual(fixture.payload.expected_parsed);
     });
   }
@@ -520,36 +492,11 @@ describe("validator defensive coverage", () => {
     });
   });
 
-  it("rejects fenced source-aware fallback rewrites as unknown", () => {
-    expect(
-      preprocessor.validate_preprocessor_output("use docker", {
-        source_input: "~~~ use docker ~~~"
-      })
-    ).toEqual({
-      classification: "unknown",
-      output: null
+  it("keeps output validation source-agnostic for canonical directive strings", () => {
+    expect(preprocessor.validate_preprocessor_output("use docker")).toEqual({
+      classification: "directive",
+      output: "use docker"
     });
-  });
-
-  it("rejects backtick-fenced source-aware fallback rewrites as unknown", () => {
-    expect(
-      preprocessor.validate_preprocessor_output("use docker", {
-        source_input: "```\nuse docker\n```"
-      })
-    ).toEqual({
-      classification: "unknown",
-      output: null
-    });
-  });
-
-  it("rejects sentence-adjacent source-aware fallback rewrites as unknown", () => {
-    expect(
-      preprocessor.validate_preprocessor_output("prohibit peanuts", {
-        source_input: "ok. prohibit peanuts"
-      })
-    ).toEqual({
-      classification: "unknown",
-      output: null
-    });
+    expect(preprocessor.parse_preprocessor_output("prohibit peanuts")).toEqual("prohibit peanuts");
   });
 });
