@@ -131,6 +131,20 @@ describe("preprocessor property-style invariants", () => {
     }
   });
 
+  it("heuristic distinguishes second directive starts from ordinary payload conjunctions", () => {
+    expect(preprocessor.preprocess_heuristic("use bread and butter")).toEqual({
+      outcome: "directive",
+      directive: "use bread and butter",
+      rule_id: "canonical.full_match"
+    });
+
+    expect(preprocessor.preprocess_heuristic("remove policy docker\nuse podman")).toEqual({
+      outcome: "unknown",
+      directive: null,
+      rule_id: "reject.multi_candidate_directive"
+    });
+  });
+
   it("public preprocessor APIs do not throw on representative hostile inputs", () => {
     const calls = [
       () => preprocessor.preprocess_heuristic(""),
