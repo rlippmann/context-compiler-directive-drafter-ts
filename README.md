@@ -65,7 +65,7 @@ if (candidate !== null) {
 }
 ```
 
-If another drafting step already produced candidate output, validate it before you use it:
+If another drafting step already produced candidate output, validate that output itself before you use it:
 
 ```ts
 import {
@@ -84,8 +84,8 @@ if (validation.classification === "directive") {
 This README uses the camelCase TypeScript entry points.
 
 - `preprocessHeuristic(message)` drafts a conservative candidate directive from raw user input
-- `validatePreprocessorOutput(rawOutput)` classifies candidate output as `directive`, `no_directive`, or `unknown`
-- `parsePreprocessorOutput(rawOutput)` returns a validated directive string or `null`
+- `validatePreprocessorOutput(rawOutput)` classifies candidate output as `directive`, `no_directive`, or `unknown` based only on `rawOutput`
+- `parsePreprocessorOutput(rawOutput)` returns a validated directive string or `null` based only on `rawOutput`
 - `renderPrompt(path, state)` renders a prompt that an LLM can use to draft candidate directives from user input using the current compiler state
 - `PREPROCESSOR_NO_DIRECTIVE_SENTINEL`, `PREPROCESS_OUTCOME_DIRECTIVE`, `PREPROCESS_OUTCOME_NO_DIRECTIVE`, and `PREPROCESS_OUTCOME_UNKNOWN` expose the public runtime contract constants
 
