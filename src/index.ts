@@ -21,11 +21,6 @@ type PreprocessorHeuristicResult = {
   rule_id: string;
 };
 
-type PreprocessorSourceOptions = {
-  source_input?: string;
-  sourceInput?: string;
-};
-
 type EngineState = {
   premise: string | null;
   policies: Record<string, unknown>;
@@ -51,11 +46,6 @@ const MULTI_SEGMENT_PATTERN =
   /^\s*(?:use|prohibit|remove policy|set premise|change premise to|clear premise|reset policies|clear state)\b.*\b(?:because|then continue|and)\b/;
 const DIRECTIVE_CUE_PATTERN =
   /\b(set premise|change premise|use|prohibit|remove policy|clear premise|reset policies|clear state)\b/;
-const SOURCE_META_PREFIX_PATTERN =
-  /^\s*(?:example:|for example\b|the command is\b|(?:i|he|she|they|docs?|documentation)\s+(?:say|says|said)\b)/;
-const SOURCE_SENTENCE_ADJACENT_DIRECTIVE_PATTERN =
-  /^[^!?]*\.\s*(?:set premise|change premise|use|prohibit|remove policy|clear premise|reset policies|clear state)\b/;
-const SOURCE_REPORTED_SPEECH_QUOTE_PATTERN = /\b(?:say|says|said|docs?|documentation)\b/;
 const PUNCTUATION_TRIM_PATTERN = /[.!]+\s*$/;
 const MALFORMED_REPLACEMENT_PATTERN = /\buse\b.*\binstead\b/;
 const MULTI_CANDIDATE_DIRECTIVE_PATTERN =
@@ -109,13 +99,6 @@ function unknownHeuristic(rule_id: string): PreprocessorHeuristicResult {
   };
 }
 
-function resolveSourceInput(source_input?: string | PreprocessorSourceOptions): string | undefined {
-  if (typeof source_input === "string") {
-    return source_input;
-  }
-  return source_input?.sourceInput ?? source_input?.source_input;
-}
-
 function normalizeWhitespace(text: string): string {
   return text.replace(/\s+/g, " ").trim();
 }
@@ -137,29 +120,9 @@ function stripExactWrapper(text: string): string {
   return inner.length > 0 ? inner : s;
 }
 
-function stripSourceWrapper(text: string): string {
-  const s = text.trim();
-  if (s.length < 2) return s;
-  const first = s[0];
-  const last = s[s.length - 1];
-  const wrapper = `${first}${last}`;
-  if (!["()", "[]"].includes(wrapper)) {
-    return s;
-  }
-  const inner = s.slice(1, -1).trim();
-  return inner.length > 0 ? inner : s;
-}
-
 function normalizeCandidate(message: string): string {
   const noPunct = message.trim().replace(PUNCTUATION_TRIM_PATTERN, "").trim();
   const unwrapped = stripExactWrapper(noPunct);
-  return normalizeWhitespace(unwrapped).toLowerCase();
-}
-
-function normalizeSourceCandidate(sourceInput: string): string {
-  const stripped = sourceInput.trim();
-  const noPunct = stripped.replace(PUNCTUATION_TRIM_PATTERN, "").trim();
-  const unwrapped = stripSourceWrapper(noPunct);
   return normalizeWhitespace(unwrapped).toLowerCase();
 }
 
@@ -177,106 +140,6 @@ function isAllowedDirective(text: string): boolean {
 
 function containsMultipleCandidateDirectives(text: string): boolean {
   return MULTI_CANDIDATE_DIRECTIVE_PATTERN.test(normalizeMatchInput(text));
-}
-
-function sourceInputIsStructuredContractDirective(sourceInput: string, directiveOutput: string): boolean {
-  const stripped = sourceInput.trim();
-  if (stripped === "" || (stripped[0] !== "{" && stripped[0] !== "[")) {
-    return false;
-  }
-
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(stripped);
-  } catch {
-    return false;
-  }
-
-  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-    return false;
-  }
-  const rec = parsed as Record<string, unknown>;
-  const keys = Object.keys(rec);
-  if (keys.length !== 2 || !keys.includes("classification") || !keys.includes("output")) {
-    return false;
-  }
-
-  return (
-    rec.classification === PREPROCESS_OUTCOME_DIRECTIVE &&
-    typeof rec.output === "string" &&
-    rec.output.trim().toLowerCase() === directiveOutput.trim().toLowerCase()
-  );
-}
-
-function isBoundaryUnsafeSourceInput(sourceInput: string): boolean {
-  const lower = sourceInput.toLowerCase();
-  const normalized = normalizeMatchInput(sourceInput);
-
-  if (sourceInput.includes("\n") || sourceInput.includes("\r")) {
-    return true;
-  }
-  if (sourceInput.includes("```") || sourceInput.includes("~~~")) {
-    return true;
-  }
-  if (sourceInput.includes("`") && DIRECTIVE_CUE_PATTERN.test(normalized)) {
-    return true;
-  }
-  if (SOURCE_META_PREFIX_PATTERN.test(normalized)) {
-    return true;
-  }
-  if (sourceInput.includes("?") && DIRECTIVE_CUE_PATTERN.test(normalized)) {
-    return true;
-  }
-  if (MULTI_SEGMENT_PATTERN.test(normalized)) {
-    return true;
-  }
-  if (MULTI_CANDIDATE_DIRECTIVE_PATTERN.test(normalized)) {
-    return true;
-  }
-  if (SOURCE_SENTENCE_ADJACENT_DIRECTIVE_PATTERN.test(normalized)) {
-    return true;
-  }
-  if (sourceInput.includes('"') && SOURCE_REPORTED_SPEECH_QUOTE_PATTERN.test(lower)) {
-    return true;
-  }
-
-  return DIRECTIVE_CUE_PATTERN.test(normalized) && !isAllowedDirective(normalizeSourceCandidate(sourceInput));
-}
-
-function isSafeFallbackDirectiveRewrite(sourceInput: string, directiveOutput: string): boolean {
-  const source = normalizeMatchInput(sourceInput);
-  const directiveText = normalizeMatchInput(directiveOutput);
-
-  if (sourceInputIsStructuredContractDirective(sourceInput, directiveOutput)) {
-    return true;
-  }
-
-  const setPremiseTo = /^set premise to\s+(.+\S)$/.exec(source);
-  if (setPremiseTo != null) {
-    const payload = setPremiseTo[1];
-    if (payload != null && directiveText === `set premise ${payload.trim()}`) {
-      return false;
-    }
-  }
-
-  const changePremiseMissingTo = /^change premise\s+(?!to\b)(.+\S)$/.exec(source);
-  if (changePremiseMissingTo != null) {
-    const payload = changePremiseMissingTo[1];
-    if (payload != null && directiveText === `change premise to ${payload.trim()}`) {
-      return false;
-    }
-  }
-
-  if (isBoundaryUnsafeSourceInput(sourceInput)) {
-    return false;
-  }
-
-  const normalizedSource = normalizeSourceCandidate(sourceInput);
-  if (!isAllowedDirective(normalizedSource)) {
-    return false;
-  }
-
-  return directiveText === normalizedSource;
 }
 
 function validateStructuredOutput(rawOutput: unknown): PreprocessorValidationResult {
@@ -345,33 +208,14 @@ function validateTextOutput(rawOutput: string): PreprocessorValidationResult {
   return unknown();
 }
 
-export function validate_preprocessor_output(
-  raw_output: unknown,
-  source_input: string | PreprocessorSourceOptions | undefined = undefined
-): PreprocessorValidationResult {
-  const validated =
-    typeof raw_output === "string" ? validateTextOutput(raw_output) : validateStructuredOutput(raw_output);
-
-  const sourceInput = resolveSourceInput(source_input);
-  if (
-    sourceInput != null &&
-    validated.classification === PREPROCESS_OUTCOME_DIRECTIVE &&
-    validated.output != null &&
-    !isSafeFallbackDirectiveRewrite(sourceInput, validated.output)
-  ) {
-    return unknown();
-  }
-
-  return validated;
+export function validate_preprocessor_output(raw_output: unknown): PreprocessorValidationResult {
+  return typeof raw_output === "string" ? validateTextOutput(raw_output) : validateStructuredOutput(raw_output);
 }
 
 export const validatePreprocessorOutput = validate_preprocessor_output;
 
-export function parse_preprocessor_output(
-  raw_output: unknown,
-  source_input: string | PreprocessorSourceOptions | undefined = undefined
-): string | null {
-  const validated = validate_preprocessor_output(raw_output, source_input);
+export function parse_preprocessor_output(raw_output: unknown): string | null {
+  const validated = validate_preprocessor_output(raw_output);
   return validated.classification === PREPROCESS_OUTCOME_DIRECTIVE ? validated.output : null;
 }
 

@@ -15,8 +15,8 @@ describe("package-owned examples", () => {
       parsedDirective: null,
       modelOutput: "use docker",
       validation: {
-        classification: "unknown",
-        output: null
+        classification: "directive",
+        output: "use docker"
       }
     });
   });
