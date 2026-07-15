@@ -43,13 +43,25 @@ const CANONICAL_DIRECTIVE_EXACT = new Set(["clear premise", "reset policies", "c
 const LIST_MARKER_PATTERN = /^\s*(?:\d+[.)]|[-*])\s+\S/;
 const META_PREFIX_PATTERN = /^\s*(?:example:|for example\b|the command is\b|(?:i|he|she|they) said\b)/;
 const MULTI_SEGMENT_PATTERN =
-  /^\s*(?:use|prohibit|remove policy|set premise|change premise to|clear premise|reset policies|clear state)\b.*\b(?:because|then continue|and)\b/;
+  /^\s*(?:use|prohibit|remove policy|set premise|change premise to|clear premise|reset policies|clear state)\b.*\b(?:because|then continue|and then continue|and explain)\b/;
 const DIRECTIVE_CUE_PATTERN =
   /\b(set premise|change premise|use|prohibit|remove policy|clear premise|reset policies|clear state)\b/;
 const PUNCTUATION_TRIM_PATTERN = /[.!]+\s*$/;
 const MALFORMED_REPLACEMENT_PATTERN = /\buse\b.*\binstead\b/;
-const MULTI_CANDIDATE_DIRECTIVE_PATTERN =
-  /(?:\band\b|\bthen\b|;|,)\s*(?:set premise\b|change premise\b|use\b|prohibit\b|remove policy\b|clear premise\b|reset policies\b|clear state\b)/;
+const CANONICAL_DIRECTIVE_STARTS = [
+  "change premise to",
+  "remove policy",
+  "clear premise",
+  "reset policies",
+  "clear state",
+  "set premise",
+  "prohibit",
+  "use"
+] as const;
+const CANONICAL_DIRECTIVE_START_PATTERN = new RegExp(
+  CANONICAL_DIRECTIVE_STARTS.map((start) => `(?<!\\S)${start.replaceAll(" ", "\\s+")}(?=\\s|$)`).join("|"),
+  "g"
+);
 
 const NEAR_MISS_ALIAS_CASES = new Set([
   "allow docker",
@@ -139,7 +151,15 @@ function isAllowedDirective(text: string): boolean {
 }
 
 function containsMultipleCandidateDirectives(text: string): boolean {
-  return MULTI_CANDIDATE_DIRECTIVE_PATTERN.test(normalizeMatchInput(text));
+  return countCanonicalDirectiveStarts(text) > 1;
+}
+
+function countCanonicalDirectiveStarts(text: string): number {
+  const normalized = normalizeMatchInput(text);
+  if (normalized === "") {
+    return 0;
+  }
+  return [...normalized.matchAll(CANONICAL_DIRECTIVE_START_PATTERN)].length;
 }
 
 function validateStructuredOutput(rawOutput: unknown): PreprocessorValidationResult {
