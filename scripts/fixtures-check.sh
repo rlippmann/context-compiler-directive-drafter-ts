@@ -26,7 +26,6 @@ fi
 
 cp -R "$SOURCE_DIR"/. "$SOURCE_COPY"/
 cp -R "$TARGET_DIR"/. "$TARGET_COPY"/
-rm -f "$TARGET_COPY/.source-commit"
 if diff -ru "$SOURCE_COPY" "$TARGET_COPY" >/dev/null; then
   echo "[fixtures:check] Python-owned fixtures are up to date."
   exit 0
