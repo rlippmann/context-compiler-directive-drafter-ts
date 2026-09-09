@@ -1,0 +1,10 @@
+{
+  "name": "rejected-please-use-docker-because",
+  "input": "please use docker because containers are nice",
+  "expected": {
+    "outcome": "rejected",
+    "directive": null,
+    "reason": "multiple_directives",
+    "internal_reason": "compound_directive"
+  }
+}

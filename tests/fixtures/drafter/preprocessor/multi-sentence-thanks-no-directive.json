@@ -1,0 +1,10 @@
+{
+  "name": "multi-sentence-thanks-no-directive",
+  "input": "please use docker. thanks.",
+  "expected": {
+    "outcome": "rejected",
+    "directive": null,
+    "reason": "non_directive",
+    "internal_reason": "multi_sentence"
+  }
+}

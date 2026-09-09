@@ -1,0 +1,10 @@
+{
+  "name": "sentence-adjacent-directive-no-directive",
+  "input": "ok. prohibit peanuts",
+  "expected": {
+    "outcome": "rejected",
+    "directive": null,
+    "reason": "non_directive",
+    "internal_reason": "multi_sentence"
+  }
+}

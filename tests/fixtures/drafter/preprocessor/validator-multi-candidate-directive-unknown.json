@@ -1,0 +1,13 @@
+{
+  "name": "validator-multi-candidate-directive-unknown",
+  "kind": "validator",
+  "raw_output": "prohibit peanuts and use almonds",
+  "expected": {
+    "classification": "rejected",
+    "output": null
+  },
+  "public_expected": {
+    "result_kind": "rejected",
+    "reason": "invalid_candidate"
+  }
+}

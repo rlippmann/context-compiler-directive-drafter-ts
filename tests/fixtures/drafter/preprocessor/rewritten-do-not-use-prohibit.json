@@ -1,0 +1,12 @@
+{
+  "name": "rewritten-do-not-use-prohibit",
+  "input": "do not use peanuts",
+  "expected": {
+    "outcome": "directive",
+    "directive": {
+      "text": "prohibit peanuts",
+      "kind": "prohibit_item",
+      "operands": {"item": "peanuts"}
+    }
+  }
+}

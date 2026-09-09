@@ -1,0 +1,9 @@
+{
+  "name": "preference-statement-empty-unknown",
+  "input": "I prefer",
+  "expected": {
+    "outcome": "unknown",
+    "directive": null,
+    "reason": "semantic_uncertainty"
+  }
+}

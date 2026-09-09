@@ -1,0 +1,12 @@
+{
+  "name": "rewritten-replacement-missing-of",
+  "input": "use podman instead docker",
+  "expected": {
+    "outcome": "directive",
+    "directive": {
+      "text": "use podman instead of docker",
+      "kind": "replace_use",
+      "operands": {"new_item": "podman", "old_item": "docker"}
+    }
+  }
+}

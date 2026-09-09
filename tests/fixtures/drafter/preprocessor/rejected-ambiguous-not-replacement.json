@@ -1,0 +1,10 @@
+{
+  "name": "rejected-ambiguous-not-replacement",
+  "input": "use uv not pip",
+  "expected": {
+    "outcome": "rejected",
+    "directive": null,
+    "reason": "multiple_directives",
+    "internal_reason": "compound_directive"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "rewritten-change-premise-missing-to",
+  "input": "change premise formal tone",
+  "expected": {
+    "outcome": "directive",
+    "directive": {
+      "text": "change premise to formal tone",
+      "kind": "change_premise",
+      "operands": {"value": "formal tone"}
+    }
+  }
+}

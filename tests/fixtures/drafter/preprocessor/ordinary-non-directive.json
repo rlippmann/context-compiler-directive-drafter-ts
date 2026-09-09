@@ -1,0 +1,10 @@
+{
+  "name": "ordinary-non-directive",
+  "input": "thanks for the help today",
+  "expected": {
+    "outcome": "rejected",
+    "directive": null,
+    "reason": "non_directive",
+    "internal_reason": "ordinary_non_directive"
+  }
+}

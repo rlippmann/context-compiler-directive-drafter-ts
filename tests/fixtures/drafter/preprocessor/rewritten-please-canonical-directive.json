@@ -1,0 +1,12 @@
+{
+  "name": "rewritten-please-canonical-directive",
+  "input": "please clear state",
+  "expected": {
+    "outcome": "directive",
+    "directive": {
+      "text": "clear state",
+      "kind": "clear_state",
+      "operands": {}
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "multi-sentence-host-segmentation-no-directive",
+  "input": "use oat milk. explain how it is made.",
+  "expected": {
+    "outcome": "rejected",
+    "directive": null,
+    "reason": "non_directive",
+    "internal_reason": "multi_sentence"
+  }
+}
