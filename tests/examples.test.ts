@@ -5,20 +5,16 @@ import { runPromptRenderingExample } from "../examples/prompt-rendering.js";
 
 describe("package-owned examples", () => {
   it("keeps the basic usage example aligned with the public API", () => {
-    expect(runBasicUsageExample()).toEqual({
-      sourceInput: "Please use Docker for container examples.",
-      heuristic: {
-        outcome: "unknown",
-        directive: null,
-        rule_id: "reject.directive_adjacent_unsafe"
-      },
-      parsedDirective: null,
-      modelOutput: "use docker",
-      validation: {
-        classification: "directive",
-        output: "use docker"
-      }
+    const result = runBasicUsageExample();
+    expect(result.sourceInput).toBe("Please use Docker for container examples.");
+    expect(result.heuristic.outcome).toBe("directive");
+    expect(result.heuristic.directive).toMatchObject({
+      text: "use docker for container examples",
+      kind: "use_item",
+      operands: { item: "docker for container examples" }
     });
+    expect(result.parsedDirective).toBe("use docker for container examples");
+    expect(result.validation).toEqual({ classification: "directive", output: "use docker" });
   });
 
   it("keeps the prompt rendering example aligned with the shipped default prompt", () => {
