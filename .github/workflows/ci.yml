@@ -33,7 +33,7 @@ jobs:
 
       - name: Resolve Python directive-drafter fixture ref
         run: |
-          PY_DRAFTER_FIXTURE_REF="$(tr -d '[:space:]' < tests/fixtures/preprocessor/.source-commit)"
+          PY_DRAFTER_FIXTURE_REF="$(tr -d '[:space:]' < tests/fixtures/.source-commit)"
           if ! [[ "${PY_DRAFTER_FIXTURE_REF}" =~ ^[0-9a-f]{40}$ ]]; then
             echo "Invalid Python directive-drafter fixture ref: ${PY_DRAFTER_FIXTURE_REF}" >&2
             exit 1
@@ -57,14 +57,14 @@ jobs:
           git -C "${PY_DRAFTER_FIXTURE_CHECKOUT}" remote add origin https://github.com/rlippmann/context-compiler-directive-drafter
           git -C "${PY_DRAFTER_FIXTURE_CHECKOUT}" fetch --depth 1 origin "${PY_DRAFTER_FIXTURE_REF}"
           git -C "${PY_DRAFTER_FIXTURE_CHECKOUT}" checkout --detach FETCH_HEAD
-          echo "Resolved fixture source: ${PY_DRAFTER_FIXTURE_CHECKOUT}/tests/fixtures/preprocessor"
+          echo "Resolved fixture source: ${PY_DRAFTER_FIXTURE_CHECKOUT}/tests/fixtures"
 
-      - name: Check preprocessor fixture drift
+      - name: Check drafter fixture drift
         env:
-          PREPROCESSOR_FIXTURES_SOURCE: /tmp/context-compiler-directive-drafter-source/tests/fixtures/preprocessor
+          DRAFTER_FIXTURES_SOURCE: /tmp/context-compiler-directive-drafter-source/tests/fixtures
         run: |
-          echo "Using PREPROCESSOR_FIXTURES_SOURCE=${PREPROCESSOR_FIXTURES_SOURCE}"
-          npm run fixtures:preprocessor:check
+          echo "Using DRAFTER_FIXTURES_SOURCE=${DRAFTER_FIXTURES_SOURCE}"
+          npm run fixtures:check
 
       - name: Check acquisition-layer boundaries
         run: npm run check:boundaries
