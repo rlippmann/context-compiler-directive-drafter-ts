@@ -22,8 +22,8 @@ const checks = [
     rationale: "Direct .state assignment is a simple signal for possible authoritative state mutation across the boundary."
   },
   {
-    pattern: "@rlippmann/context-compiler",
-    rationale: "Package source and package-owned examples should not import the authority-layer package."
+    pattern: "from \"@rlippmann/context-compiler\"",
+    rationale: "Package source and package-owned examples should not import the authority-layer package root; grammar-only imports are allowed."
   }
 ];
 
