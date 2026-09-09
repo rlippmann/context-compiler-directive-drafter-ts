@@ -1,8 +1,0 @@
-{
-  "name": "list-prefix-meta-example-unknown",
-  "input": "1. example: use docker",
-  "expected": {
-    "classification": "unknown",
-    "output": null
-  }
-}

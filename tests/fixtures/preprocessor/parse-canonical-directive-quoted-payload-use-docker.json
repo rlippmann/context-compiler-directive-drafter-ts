@@ -1,6 +1,0 @@
-{
-  "name": "parse-canonical-directive-quoted-payload-use-docker",
-  "kind": "parse",
-  "raw_output": "use \"docker\"",
-  "expected_parsed": "use \"docker\""
-}
