@@ -37,7 +37,7 @@ Future CI integration should provide `DRAFTER_FIXTURES_SOURCE` explicitly.
 
 Fixture sync records the upstream Python directive-drafter commit in:
 
-- `tests/fixtures/drafter/.source-commit`
+- `tests/fixtures/.source-commit`
 
 Drift checks verify both:
 

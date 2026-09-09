@@ -24,5 +24,5 @@ mkdir -p tests/fixtures
 rm -rf "$TARGET_DIR"
 mkdir -p "$TARGET_DIR"
 cp -R "$SOURCE_DIR"/. "$TARGET_DIR"/
-printf '%s\n' "$(git -C "$SOURCE_DIR" rev-parse HEAD)" > "$TARGET_DIR/.source-commit"
+printf '%s\n' "$(git -C "$SOURCE_DIR" rev-parse HEAD)" > "tests/fixtures/.source-commit"
 echo "[fixtures:sync] Synced Python-owned fixture tree to '$TARGET_DIR'."

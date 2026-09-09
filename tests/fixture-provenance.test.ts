@@ -48,7 +48,7 @@ function createSourceRepo(): { dir: string; commit: string } {
 function prepareWorkspace(root: string, commit: string): string {
   const target = join(root, 'tests', 'fixtures', 'drafter');
   mkdirSync(target, { recursive: true });
-  writeFileSync(join(target, '.source-commit'), `${commit}\n`, 'utf8');
+  writeFileSync(join(root, 'tests', 'fixtures', '.source-commit'), `${commit}\n`, 'utf8');
   return target;
 }
 
@@ -84,12 +84,12 @@ describe('fixture provenance tooling', () => {
     const source = createSourceRepo();
     const root = makeTempDir();
     const target = prepareWorkspace(root, source.commit);
-    rmSync(join(target, '.source-commit'));
+    rmSync(join(root, 'tests', 'fixtures', '.source-commit'));
 
     const missing = run(CHECK_SCRIPT, root, source.dir);
     expect(missing.stderr).toContain('Missing provenance file');
 
-    writeFileSync(join(target, '.source-commit'), 'not-a-sha\n', 'utf8');
+    writeFileSync(join(root, 'tests', 'fixtures', '.source-commit'), 'not-a-sha\n', 'utf8');
     const malformed = run(CHECK_SCRIPT, root, source.dir);
     expect(malformed.stderr).toContain('lowercase 40-character commit SHA');
   });
@@ -117,7 +117,7 @@ describe('fixture provenance tooling', () => {
       cwd: source.dir,
       encoding: 'utf8'
     }).stdout.trim();
-    writeFileSync(join(target, '.source-commit'), `${currentCommit}\n`, 'utf8');
+    writeFileSync(join(root, 'tests', 'fixtures', '.source-commit'), `${currentCommit}\n`, 'utf8');
     writeFileSync(join(target, 'contracts', 'prompts', 'default.txt'), 'drift\n', 'utf8');
     const drift = run(CHECK_SCRIPT, root, source.dir);
     expect(drift.status).toBe(1);

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DRAFTER_FIXTURE_PROVENANCE_FILE="tests/fixtures/drafter/.source-commit"
+DRAFTER_FIXTURE_PROVENANCE_FILE="tests/fixtures/.source-commit"
 
 drafter_fixture_provenance_file() {
   printf '%s\n' "$DRAFTER_FIXTURE_PROVENANCE_FILE"
