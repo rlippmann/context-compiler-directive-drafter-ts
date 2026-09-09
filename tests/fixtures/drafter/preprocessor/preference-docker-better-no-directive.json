@@ -1,0 +1,9 @@
+{
+  "name": "preference-docker-better-no-directive",
+  "input": "Docker would be better",
+  "expected": {
+    "outcome": "unknown",
+    "directive": null,
+    "reason": "semantic_uncertainty"
+  }
+}

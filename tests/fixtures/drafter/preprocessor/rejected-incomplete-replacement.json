@@ -1,0 +1,10 @@
+{
+  "name": "rejected-incomplete-replacement",
+  "input": "use podman instead of",
+  "expected": {
+    "outcome": "rejected",
+    "directive": null,
+    "reason": "incomplete",
+    "internal_reason": "incomplete_directive"
+  }
+}

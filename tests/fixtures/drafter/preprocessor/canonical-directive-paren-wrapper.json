@@ -1,0 +1,12 @@
+{
+  "name": "canonical-directive-paren-wrapper",
+  "input": "(clear state)",
+  "expected": {
+    "outcome": "directive",
+    "directive": {
+      "text": "clear state",
+      "kind": "clear_state",
+      "operands": {}
+    }
+  }
+}

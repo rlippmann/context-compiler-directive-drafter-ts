@@ -1,0 +1,10 @@
+{
+  "name": "rejected-please-set-premise-because",
+  "input": "please set premise to concise replies because brevity helps",
+  "expected": {
+    "outcome": "rejected",
+    "directive": null,
+    "reason": "multiple_directives",
+    "internal_reason": "compound_directive"
+  }
+}

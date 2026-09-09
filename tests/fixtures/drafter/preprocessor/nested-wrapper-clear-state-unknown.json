@@ -1,0 +1,9 @@
+{
+  "name": "nested-wrapper-clear-state-unknown",
+  "input": "([clear state])",
+  "expected": {
+    "outcome": "unknown",
+    "directive": null,
+    "reason": "semantic_uncertainty"
+  }
+}

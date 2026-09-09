@@ -1,0 +1,12 @@
+{
+  "name": "canonical-directive-reset-policies-bang",
+  "input": "reset policies!",
+  "expected": {
+    "outcome": "directive",
+    "directive": {
+      "text": "reset policies",
+      "kind": "reset_policies",
+      "operands": {}
+    }
+  }
+}

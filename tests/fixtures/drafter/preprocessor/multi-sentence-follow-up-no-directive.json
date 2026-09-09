@@ -1,0 +1,10 @@
+{
+  "name": "multi-sentence-follow-up-no-directive",
+  "input": "use docker. then tell me why.",
+  "expected": {
+    "outcome": "rejected",
+    "directive": null,
+    "reason": "non_directive",
+    "internal_reason": "multi_sentence"
+  }
+}
