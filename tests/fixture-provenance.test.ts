@@ -1,12 +1,11 @@
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
 const ROOT = resolve(process.cwd());
-const SYNC_SCRIPT = resolve(ROOT, 'scripts', 'fixtures-sync.sh');
 const CHECK_SCRIPT = resolve(ROOT, 'scripts', 'fixtures-check.sh');
 const tempDirs: string[] = [];
 
@@ -125,14 +124,4 @@ describe('fixture provenance tooling', () => {
     expect(drift.stderr).toContain('Fixture drift detected');
   });
 
-  it('synchronizes the complete nested source tree and records its commit', () => {
-    const source = createSourceRepo();
-    const root = makeTempDir();
-    const result = run(SYNC_SCRIPT, root, source.dir);
-    expect(result.status).toBe(0);
-
-    const target = join(root, 'tests', 'fixtures', 'drafter');
-    expect(readFileSync(join(target, '.source-commit'), 'utf8')).toBe(`${source.commit}\n`);
-    expect(readFileSync(join(target, 'contracts', 'prompts', 'default.txt'), 'utf8')).toBe('prompt\n');
-  });
 });

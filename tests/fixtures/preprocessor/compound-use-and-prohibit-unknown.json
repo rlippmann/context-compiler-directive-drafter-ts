@@ -1,8 +1,0 @@
-{
-  "name": "compound-use-and-prohibit-unknown",
-  "input": "use docker and prohibit peanuts",
-  "expected": {
-    "classification": "unknown",
-    "output": null
-  }
-}

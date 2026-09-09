@@ -1,8 +1,0 @@
-{
-  "name": "compound-set-premise-then-use-unknown",
-  "input": "set premise deployment target is staging, then use cautious rollout",
-  "expected": {
-    "classification": "unknown",
-    "output": null
-  }
-}

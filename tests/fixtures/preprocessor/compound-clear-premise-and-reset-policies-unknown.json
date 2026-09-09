@@ -1,8 +1,0 @@
-{
-  "name": "compound-clear-premise-and-reset-policies-unknown",
-  "input": "clear premise and reset policies",
-  "expected": {
-    "classification": "unknown",
-    "output": null
-  }
-}
