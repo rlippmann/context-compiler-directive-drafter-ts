@@ -4,25 +4,23 @@ This document covers maintainer-oriented fixture sync and cross-language contrac
 
 ## Source Of Truth
 
-Portable preprocessor fixtures and the public API contract fixture are synced from the Python `context-compiler-directive-drafter` repository.
+The complete Python-owned fixture tree is synchronized from the Python `context-compiler-directive-drafter` repository. The TypeScript repository stores it as a read-only external artifact; later PRs will add tests that consume it.
 
 Synced source directory:
 
-- `tests/fixtures/preprocessor/`
+- `tests/fixtures/drafter/`
 
 Synced contract material includes:
 
-- portable heuristic fixtures
-- portable validator fixtures
-- portable parse fixtures
-- `public-api-v1.json`
+- the complete Python `tests/fixtures/` tree, including contracts, prompts,
+  normalization data, and preprocessor fixtures
 
 ## Refresh Fixtures
 
 Refresh local fixtures from a Python directive-drafter checkout:
 
 ```bash
-PREPROCESSOR_FIXTURES_SOURCE=/path/to/context-compiler-directive-drafter/tests/fixtures/preprocessor npm run fixtures:preprocessor:sync
+DRAFTER_FIXTURES_SOURCE=/path/to/context-compiler-directive-drafter/tests/fixtures npm run fixtures:sync
 ```
 
 ## Drift Checks
@@ -30,16 +28,16 @@ PREPROCESSOR_FIXTURES_SOURCE=/path/to/context-compiler-directive-drafter/tests/f
 Check local fixture drift against a Python directive-drafter checkout:
 
 ```bash
-PREPROCESSOR_FIXTURES_SOURCE=/path/to/context-compiler-directive-drafter/tests/fixtures/preprocessor npm run fixtures:preprocessor:check
+DRAFTER_FIXTURES_SOURCE=/path/to/context-compiler-directive-drafter/tests/fixtures npm run fixtures:check
 ```
 
-CI should provide `PREPROCESSOR_FIXTURES_SOURCE` explicitly.
+Future CI integration should provide `DRAFTER_FIXTURES_SOURCE` explicitly.
 
 ## .source-commit
 
 Fixture sync records the upstream Python directive-drafter commit in:
 
-- `tests/fixtures/preprocessor/.source-commit`
+- `tests/fixtures/drafter/.source-commit`
 
 Drift checks verify both:
 
@@ -48,7 +46,9 @@ Drift checks verify both:
 
 ## public-api-v1.json
 
-`tests/fixtures/preprocessor/public-api-v1.json` is the shared cross-language public API contract fixture.
+The synchronized `tests/fixtures/drafter/` tree is owned by the Python drafter.
+Do not hand-edit its files. Update the Python source first, then synchronize
+from the pinned checkout.
 
 It defines contract expectations such as:
 
