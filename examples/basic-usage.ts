@@ -16,7 +16,7 @@ export type BasicUsageExampleResult = {
 
 export function runBasicUsageExample(): BasicUsageExampleResult {
   const heuristic = preprocessHeuristic(sourceInput);
-  const parsedDirective = heuristic.directive === null ? null : parsePreprocessorOutput(heuristic.directive);
+  const parsedDirective = heuristic.directive === null ? null : parsePreprocessorOutput(heuristic.directive.text);
   const modelOutput = "use docker";
   const validation = validatePreprocessorOutput(modelOutput);
 
