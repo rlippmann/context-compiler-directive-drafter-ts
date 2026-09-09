@@ -62,7 +62,7 @@ function normalizedValidatorResult(rawOutput: unknown) {
 
   expect(typeof result).toBe("object");
   expect(result).not.toBeNull();
-  expect(["directive", "no_directive", "unknown"]).toContain(result.classification);
+  expect(["directive", "rejected"]).toContain(result.classification);
 
   if (result.classification === "directive") {
     expect(typeof result.output).toBe("string");
@@ -79,15 +79,14 @@ function normalizedHeuristicResult(message: string) {
 
   expect(typeof result).toBe("object");
   expect(result).not.toBeNull();
-  expect(["directive", "no_directive", "unknown"]).toContain(result.outcome);
-  expect(typeof result.rule_id).toBe("string");
-  expect(result.rule_id.length).toBeGreaterThan(0);
+  expect(["directive", "rejected", "unknown"]).toContain(result.outcome);
 
   if (result.outcome === "directive") {
-    expect(typeof result.directive).toBe("string");
-    expect(preprocessor.parse_preprocessor_output(result.directive)).toBe(result.directive);
+    expect(result.directive).toMatchObject({ text: expect.any(String), kind: expect.any(String), operands: expect.any(Object) });
+    expect(preprocessor.parse_preprocessor_output(result.directive.text)).toBe(result.directive.text);
   } else {
     expect(result.directive).toBeNull();
+    expect(typeof result.reason).toBe("string");
   }
 
   return result;
@@ -132,16 +131,15 @@ describe("preprocessor property-style invariants", () => {
   });
 
   it("heuristic distinguishes second directive starts from ordinary payload conjunctions", () => {
-    expect(preprocessor.preprocess_heuristic("use bread and butter")).toEqual({
+    expect(preprocessor.preprocess_heuristic("use bread and butter")).toMatchObject({
       outcome: "directive",
-      directive: "use bread and butter",
-      rule_id: "canonical.full_match"
+      directive: { text: "use bread and butter", kind: "use_item", operands: { item: "bread and butter" } }
     });
 
     expect(preprocessor.preprocess_heuristic("remove policy docker\nuse podman")).toEqual({
-      outcome: "unknown",
+      outcome: "rejected",
       directive: null,
-      rule_id: "reject.multi_candidate_directive"
+      reason: "multiple_directives"
     });
   });
 
