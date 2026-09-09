@@ -31,7 +31,7 @@ Check local fixture drift against a Python directive-drafter checkout:
 DRAFTER_FIXTURES_SOURCE=/path/to/context-compiler-directive-drafter/tests/fixtures npm run fixtures:check
 ```
 
-Future CI integration should provide `DRAFTER_FIXTURES_SOURCE` explicitly.
+CI provides `DRAFTER_FIXTURES_SOURCE` explicitly for fixture drift checks.
 
 ## .source-commit
 
