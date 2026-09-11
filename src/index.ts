@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 
-import { CanonicalDirective, decompose_directive } from "@rlippmann/context-compiler/grammar";
+import { CanonicalDirective, decompose_directive, getDirectiveMetadata } from "@rlippmann/context-compiler/grammar";
+import { canonicalStartsFromMetadata, isIncompleteCanonicalDirective, renderCanonicalCandidate } from "./grammar-derivation.js";
 
 export const PREPROCESSOR_NO_DIRECTIVE_SENTINEL = "<NO_DIRECTIVE>";
 export const PREPROCESS_OUTCOME_DIRECTIVE = "directive";
@@ -41,7 +42,7 @@ const REPORTING_BRACKET_MARKERS = ["in my notes", "notes:", "i wrote down"];
 
 function normalizedForMatch(message: string): string { return message.replace(/\s+/gu, " ").trim().toLowerCase(); }
 function escapeRegExp(value: string): string { return value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"); }
-function directiveStarts(): string[] { return ["change premise to", "set premise", "remove policy", "reset policies", "clear premise", "clear state", "prohibit", "use"]; }
+function directiveStarts(): string[] { return canonicalStartsFromMetadata(getDirectiveMetadata()); }
 function directiveCues(): string[] { return [...new Set([...directiveStarts(), "change premise"])]; }
 function startsPattern(starts: string[]): RegExp { return new RegExp(`(?:${starts.map(escapeRegExp).join("|")})\\b`, "giu"); }
 function hasMultipleDirectiveStarts(message: string): boolean { return [...normalizedForMatch(message).matchAll(startsPattern(directiveStarts()))].length > 1; }
@@ -62,20 +63,20 @@ function stripTerminalPunctuation(message: string): string { return message.repl
 function stripExactWrapper(message: string): string { const stripped = message.trim(); if (stripped.length < 2 || !WRAPPER_PAIRS.has(`${stripped[0]}${stripped.at(-1)}`)) return stripped; return stripped.slice(1, -1).trim(); }
 function normalizeCandidate(message: string): string { return normalizedForMatch(stripExactWrapper(stripTerminalPunctuation(message))); }
 function isQuotedOrBacktickWrapped(message: string): boolean { const stripped = message.trim(); return stripped.length >= 2 && new Set(["\"\"", "''", "``"]).has(`${stripped[0]}${stripped.at(-1)}`); }
-function isIncompleteDirective(message: string): boolean { return new Set(["use", "prohibit", "remove policy", "change premise", "change premise to", "set premise", "set premise to"]).has(message) || message.endsWith(" instead of") || message.startsWith("use instead of ") || INCOMPLETE_PROHIBIT_PATTERN.test(message); }
+function isIncompleteDirective(message: string): boolean { return isIncompleteCanonicalDirective(message, getDirectiveMetadata()) || new Set(["change premise", "set premise to"]).has(message) || message.endsWith(" instead of") || message.startsWith("use instead of ") || INCOMPLETE_PROHIBIT_PATTERN.test(message); }
 function rewriteBoundedCandidate(message: string): string {
   let current = message;
   const rewrites: [RegExp, (match: RegExpMatchArray) => string][] = [
     [PLEASE_PREFIX_PATTERN, (m) => m.groups?.directive ?? ""],
-    [PREFERENCE_PREFIX_PATTERN, (m) => /\bi prefer\b/iu.test(m.groups?.payload ?? "") ? current : `use ${m.groups?.payload ?? ""}`],
-    [SET_PREMISE_TO_PATTERN, (m) => `set premise ${m.groups?.payload ?? ""}`],
-    [CHANGE_PREMISE_MISSING_TO_PATTERN, (m) => `change premise to ${m.groups?.payload ?? ""}`],
-    [ALLOW_ALIAS_PATTERN, (m) => `use ${m.groups?.item ?? ""}`],
-    [PROHIBIT_ALIAS_PATTERN, (m) => `prohibit ${m.groups?.item ?? ""}`],
-    [STOP_USING_ALIAS_PATTERN, (m) => `prohibit ${m.groups?.item ?? ""}`],
-    [TRANSPOSED_PROHIBIT_PATTERN, (m) => `prohibit ${m.groups?.item ?? ""}`],
-    [REPLACE_MISSING_OF_PATTERN, (m) => `use ${m.groups?.newItem ?? ""} instead of ${m.groups?.oldItem ?? ""}`],
-    [REPLACE_SPLIT_OF_PATTERN, (m) => `use ${m.groups?.newItem ?? ""} instead of ${m.groups?.oldItem ?? ""}`]
+    [PREFERENCE_PREFIX_PATTERN, (m) => /\bi prefer\b/iu.test(m.groups?.payload ?? "") ? current : renderCanonicalCandidate("use_item", [m.groups?.payload ?? ""], getDirectiveMetadata())],
+    [SET_PREMISE_TO_PATTERN, (m) => renderCanonicalCandidate("set_premise", [m.groups?.payload ?? ""], getDirectiveMetadata())],
+    [CHANGE_PREMISE_MISSING_TO_PATTERN, (m) => renderCanonicalCandidate("change_premise", [m.groups?.payload ?? ""], getDirectiveMetadata())],
+    [ALLOW_ALIAS_PATTERN, (m) => renderCanonicalCandidate("use_item", [m.groups?.item ?? ""], getDirectiveMetadata())],
+    [PROHIBIT_ALIAS_PATTERN, (m) => renderCanonicalCandidate("prohibit_item", [m.groups?.item ?? ""], getDirectiveMetadata())],
+    [STOP_USING_ALIAS_PATTERN, (m) => renderCanonicalCandidate("prohibit_item", [m.groups?.item ?? ""], getDirectiveMetadata())],
+    [TRANSPOSED_PROHIBIT_PATTERN, (m) => renderCanonicalCandidate("prohibit_item", [m.groups?.item ?? ""], getDirectiveMetadata())],
+    [REPLACE_MISSING_OF_PATTERN, (m) => renderCanonicalCandidate("replace_use", [m.groups?.newItem ?? "", m.groups?.oldItem ?? ""], getDirectiveMetadata())],
+    [REPLACE_SPLIT_OF_PATTERN, (m) => renderCanonicalCandidate("replace_use", [m.groups?.newItem ?? "", m.groups?.oldItem ?? ""], getDirectiveMetadata())]
   ];
   for (const [pattern, replacement] of rewrites) { const match = current.match(pattern); if (match) current = replacement(match); }
   return current;
