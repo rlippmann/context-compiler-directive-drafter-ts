@@ -58,11 +58,13 @@ It defines contract expectations such as:
 - return-shape contracts
 - behavior probes where portable contract behavior needs direct execution
 
-Canonical cross-language API names in the shared contract fixture are `snake_case`.
+The root TypeScript entry point consumes the portable declared surface directly,
+including its `snake_case` member names. The separate portable fallbacks
+namespace maps operation names such as `get_fallback_profile` to the idiomatic
+TypeScript `getFallbackProfile` spelling in its focused harness.
 
-The TypeScript package may expose camelCase ergonomic aliases for consumer code, but the shared public API contract fixture remains the canonical snake_case source of truth.
-
-TypeScript-specific package naming differences should be handled narrowly in the test harness, not by diverging from the shared contract fixture.
+Python-only provider exports are kept in the Python-specific fixture and are not
+requirements of the TypeScript package.
 
 ## Cross-Language Expectations
 

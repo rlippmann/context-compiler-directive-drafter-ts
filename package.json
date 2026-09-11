@@ -25,10 +25,14 @@
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    }
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      },
+      "./fallbacks": {
+        "types": "./dist/fallbacks.d.ts",
+        "import": "./dist/fallbacks.js"
+      }
   },
   "files": [
     "dist",

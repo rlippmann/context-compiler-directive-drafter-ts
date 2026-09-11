@@ -4,7 +4,7 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { parsePreprocessorOutput, preprocessHeuristic, validatePreprocessorOutput } from "../src/index.js";
+import { parsePreprocessorOutput, preprocessHeuristic, validatePreprocessorOutput } from "../src/preprocessor.js";
 
 const FIXTURES = fileURLToPath(new URL("./fixtures/drafter/preprocessor", import.meta.url));
 const paths = readdirSync(FIXTURES).filter((name) => name.endsWith(".json")).sort();

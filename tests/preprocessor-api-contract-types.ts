@@ -1,4 +1,4 @@
-import * as preprocessor from "../src/index.js";
+import * as preprocessor from "../src/preprocessor.js";
 
 preprocessor.validate_preprocessor_output("use docker");
 preprocessor.parse_preprocessor_output("use docker");
