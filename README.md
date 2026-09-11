@@ -45,90 +45,34 @@ your host may want a candidate directive like:
 You can draft and validate that candidate like this:
 
 ```ts
-import {
-  parsePreprocessorOutput,
-  preprocessHeuristic
-} from "@rlippmann/context-compiler-directive-drafter";
+import { DirectiveDrafter } from "@rlippmann/context-compiler-directive-drafter";
 
 const userMessage = "Please use Docker for container examples.";
-const heuristic = preprocessHeuristic(userMessage);
-
-const candidate =
-  heuristic.directive === null
-    ? null
-    : parsePreprocessorOutput(heuristic.directive);
-
-if (candidate !== null) {
-  console.log("Candidate directive:", candidate);
-} else {
-  console.log("No canonical directive found.");
-}
-```
-
-If another drafting step already produced candidate output, validate that output itself before you use it:
-
-```ts
-import {
-  validatePreprocessorOutput
-} from "@rlippmann/context-compiler-directive-drafter";
-
-const validation = validatePreprocessorOutput("use docker");
-
-if (validation.classification === "directive") {
-  console.log(validation.output);
-}
+const draft = new DirectiveDrafter().draft_directive(userMessage);
+console.log("Candidate draft:", draft);
 ```
 
 ## API
 
-This README uses the camelCase TypeScript entry points.
+The root entry point exposes `DirectiveDrafter`, `DraftResult`, `RejectedDirective`,
+`UnknownDirective`, and the four rejection reason constants. Its methods use the
+portable snake_case names declared by the conformance contract. Drafts are
+non-authoritative proposals; the Context Compiler remains responsible for
+canonical decisions and state changes.
 
-- `preprocessHeuristic(message)` drafts a conservative candidate directive from raw user input
-- `validatePreprocessorOutput(rawOutput)` classifies candidate output as `directive`, `no_directive`, or `unknown` based only on `rawOutput`
-- `parsePreprocessorOutput(rawOutput)` returns a validated directive string or `null` based only on `rawOutput`
-- `renderPrompt(path, state)` renders a prompt that an LLM can use to draft candidate directives from user input using the current compiler state
-- `PREPROCESSOR_NO_DIRECTIVE_SENTINEL`, `PREPROCESS_OUTCOME_DIRECTIVE`, `PREPROCESS_OUTCOME_NO_DIRECTIVE`, and `PREPROCESS_OUTCOME_UNKNOWN` expose the public runtime contract constants
+Provider-neutral fallback profiles are available from the `./fallbacks` subpath:
+
+```ts
+import {
+  getFallbackProfile,
+  parseStructuredResponse
+} from "@rlippmann/context-compiler-directive-drafter/fallbacks";
+```
 
 ### Prompt Resources
 
-Use `renderPrompt(path, state)` when your host wants an LLM to help draft candidate directives from user input.
-
-The package ships:
-
-- `prompts/default.txt`
-- `prompts/llama.txt`
-
-`renderPrompt(path, state)`:
-
-- reads a prompt template file from `path`
-- removes leading blank or header comment lines
-- replaces `<NULL_OR_VALUE>` with the current premise or `null`
-- replaces `<SET OF CURRENT POLICY ITEMS>` with normalized policy items or `(none)`
-
-```ts
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
-import {
-  renderPrompt
-} from "@rlippmann/context-compiler-directive-drafter";
-
-const packageEntryUrl = await import.meta.resolve(
-  "@rlippmann/context-compiler-directive-drafter"
-);
-const packageRoot = dirname(dirname(fileURLToPath(packageEntryUrl)));
-const defaultPromptPath = join(packageRoot, "prompts", "default.txt");
-
-const rendered = renderPrompt(defaultPromptPath, {
-  premise: "concise replies",
-  policies: {
-    docker: true
-  }
-});
-```
-
-If a model uses a rendered prompt to draft output, validate that output itself
-with `parsePreprocessorOutput(...)` or `validatePreprocessorOutput(...)` before
-you use it.
+If a model uses a fallback profile to draft output, validate that output through
+the drafter before handing the candidate to `context-compiler`.
 
 For complete examples, see: [examples/basic-usage.ts](/Users/rlippmann/Source/context-compiler-directive-drafter-ts/examples/basic-usage.ts) and [examples/prompt-rendering.ts](/Users/rlippmann/Source/context-compiler-directive-drafter-ts/examples/prompt-rendering.ts)
 

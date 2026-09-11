@@ -14,7 +14,7 @@ export class InvalidFallbackResponseError extends Error {
   }
 }
 
-export type FallbackProfileOptions = {
+type FallbackProfileOptions = {
   structuredOutput?: boolean;
   allowedDirectiveKinds?: readonly string[] | null;
 };

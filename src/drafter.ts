@@ -10,7 +10,7 @@ import {
   preprocess_heuristic,
   validate_preprocessor_output,
   type PreprocessorReason
-} from "./index.js";
+} from "./preprocessor.js";
 
 export type RejectedReason = "non_directive" | "incomplete" | "multiple_directives" | "invalid_candidate";
 export const REASON_NON_DIRECTIVE = "non_directive" as const;
@@ -72,27 +72,20 @@ export class DirectiveDrafter {
   }
   get fallback(): boolean { return this.#fallback !== null; }
   get async_fallback(): boolean { return this.#asyncFallback !== null; }
-  get asyncFallback(): boolean { return this.async_fallback; }
   configure_fallback(fallback: DraftFallback, source: string): void { this.#fallback = fallback; this.#fallbackSource = source; }
-  configureFallback(fallback: DraftFallback, source: string): void { this.configure_fallback(fallback, source); }
   clear_fallback(): void { this.#fallback = null; }
-  clearFallback(): void { this.clear_fallback(); }
   configure_async_fallback(fallback: AsyncDraftFallback, source: string): void { this.#asyncFallback = fallback; this.#asyncFallbackSource = source; }
-  configureAsyncFallback(fallback: AsyncDraftFallback, source: string): void { this.configure_async_fallback(fallback, source); }
   clear_async_fallback(): void { this.#asyncFallback = null; }
-  clearAsyncFallback(): void { this.clear_async_fallback(); }
   draft_directive(userInput: string): DraftResult {
     const heuristic = fromHeuristic(userInput);
     if (!(heuristic.result instanceof UnknownDirective) || this.#fallback === null) return heuristic;
     try { return fromFallbackOutput(this.#fallback(userInput), this.#fallbackSource); }
     catch (error) { if (error instanceof InvalidFallbackResponseError) return new DraftResult(this.#fallbackSource, new RejectedDirective(REASON_INVALID_CANDIDATE)); throw error; }
   }
-  draftDirective(userInput: string): DraftResult { return this.draft_directive(userInput); }
   async async_draft_directive(userInput: string): Promise<DraftResult> {
     const heuristic = fromHeuristic(userInput);
     if (!(heuristic.result instanceof UnknownDirective) || this.#asyncFallback === null) return heuristic;
     try { return fromFallbackOutput(await this.#asyncFallback(userInput), this.#asyncFallbackSource); }
     catch (error) { if (error instanceof InvalidFallbackResponseError) return new DraftResult(this.#asyncFallbackSource, new RejectedDirective(REASON_INVALID_CANDIDATE)); throw error; }
   }
-  async asyncDraftDirective(userInput: string): Promise<DraftResult> { return this.async_draft_directive(userInput); }
 }

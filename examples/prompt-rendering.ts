@@ -1,6 +1,6 @@
 import { fileURLToPath } from "node:url";
 
-import { renderPrompt } from "../src/index.js";
+import { renderPrompt } from "../src/preprocessor.js";
 
 const defaultPromptPath = fileURLToPath(new URL("../prompts/default.txt", import.meta.url));
 

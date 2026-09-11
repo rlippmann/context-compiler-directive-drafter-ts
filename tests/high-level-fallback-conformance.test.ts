@@ -8,13 +8,10 @@ import { describe, expect, it } from "vitest";
 import {
   DirectiveDrafter,
   DraftResult,
-  FallbackProfile,
-  InvalidFallbackResponseError,
   RejectedDirective,
   UnknownDirective,
-  getFallbackProfile,
-  parseStructuredResponse
 } from "../src/index.js";
+import { FallbackProfile, InvalidFallbackResponseError, getFallbackProfile, parseStructuredResponse } from "../src/fallbacks.js";
 import { CanonicalDirective } from "@rlippmann/context-compiler/grammar";
 
 const CONTRACTS = fileURLToPath(new URL("./fixtures/drafter/contracts", import.meta.url));
@@ -69,8 +66,8 @@ describe("Python high-level drafting contract", () => {
     expect(sync.fallback).toBe(true);
     sync.configure_fallback((_input) => "use podman", "configured-sync");
     expect(sync.draft_directive("Could we maybe use uv later").source).toBe("configured-sync");
-    sync.configureFallback((_input) => "use docker", "replaced-sync");
-    expect(sync.draftDirective("Could we maybe use uv later").source).toBe("replaced-sync");
+    sync.configure_fallback((_input) => "use docker", "replaced-sync");
+    expect(sync.draft_directive("Could we maybe use uv later").source).toBe("replaced-sync");
     sync.clear_fallback();
     expect(sync.fallback).toBe(false);
 
@@ -78,8 +75,8 @@ describe("Python high-level drafting contract", () => {
     expect(asyncDrafter.async_fallback).toBe(true);
     asyncDrafter.configure_async_fallback(async (_input) => "use podman", "configured-async");
     await expect(asyncDrafter.async_draft_directive("Could we maybe use uv later")).resolves.toMatchObject({ source: "configured-async" });
-    asyncDrafter.configureAsyncFallback(async (_input) => "use docker", "replaced-async");
-    await expect(asyncDrafter.asyncDraftDirective("Could we maybe use uv later")).resolves.toMatchObject({ source: "replaced-async" });
+    asyncDrafter.configure_async_fallback(async (_input) => "use docker", "replaced-async");
+    await expect(asyncDrafter.async_draft_directive("Could we maybe use uv later")).resolves.toMatchObject({ source: "replaced-async" });
     asyncDrafter.clear_async_fallback();
     expect(asyncDrafter.async_fallback).toBe(false);
   });

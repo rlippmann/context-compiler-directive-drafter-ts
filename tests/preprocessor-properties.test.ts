@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import * as preprocessor from "../src/index.js";
+import * as preprocessor from "../src/preprocessor.js";
 
 const canonicalDirectives = [
   "set premise concise replies",

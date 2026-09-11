@@ -2,7 +2,7 @@ import {
   parsePreprocessorOutput,
   preprocessHeuristic,
   validatePreprocessorOutput
-} from "../src/index.js";
+} from "../src/preprocessor.js";
 
 const sourceInput = "Please use Docker for container examples.";
 

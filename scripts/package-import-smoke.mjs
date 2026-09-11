@@ -35,49 +35,25 @@ async function main() {
     );
 
     const verification = `
-      import { accessSync, constants } from "node:fs";
-      import { dirname, join } from "node:path";
-      import { fileURLToPath } from "node:url";
       const mod = await import("@rlippmann/context-compiler-directive-drafter");
       const expected = [
-        "PREPROCESSOR_NO_DIRECTIVE_SENTINEL",
-        "parse_preprocessor_output",
-        "preprocess_heuristic",
-        "render_prompt",
-        "validate_preprocessor_output"
+        "DirectiveDrafter",
+        "DraftResult",
+        "RejectedDirective",
+        "UnknownDirective",
+        "REASON_NON_DIRECTIVE",
+        "REASON_INCOMPLETE",
+        "REASON_MULTIPLE_DIRECTIVES",
+        "REASON_INVALID_CANDIDATE"
       ];
       for (const name of expected) {
         if (!(name in mod)) {
           throw new Error(\`Missing export: \${name}\`);
         }
       }
-      if (typeof mod.preprocess_heuristic !== "function") {
-        throw new Error("preprocess_heuristic should be a function");
-      }
-      if (typeof mod.renderPrompt !== "function") {
-        throw new Error("renderPrompt should be a function");
-      }
-
-      const packageEntryUrl = await import.meta.resolve("@rlippmann/context-compiler-directive-drafter");
-      const packageRoot = dirname(dirname(fileURLToPath(packageEntryUrl)));
-      const defaultPromptPath = join(packageRoot, "prompts", "default.txt");
-      const llamaPromptPath = join(packageRoot, "prompts", "llama.txt");
-
-      accessSync(defaultPromptPath, constants.R_OK);
-      accessSync(llamaPromptPath, constants.R_OK);
-
-      const rendered = mod.renderPrompt(defaultPromptPath, {
-        premise: "concise replies",
-        policies: { docker: true }
-      });
-      if (typeof rendered !== "string") {
-        throw new Error("renderPrompt should return a string for a shipped prompt path");
-      }
-      if (!rendered.includes("concise replies")) {
-        throw new Error("renderPrompt did not render premise into shipped prompt");
-      }
-      if (!rendered.includes("docker")) {
-        throw new Error("renderPrompt did not render policy into shipped prompt");
+      const fallbackMod = await import("@rlippmann/context-compiler-directive-drafter/fallbacks");
+      if (typeof fallbackMod.getFallbackProfile !== "function") {
+        throw new Error("getFallbackProfile should be available from the fallbacks subpath");
       }
     `;
 
