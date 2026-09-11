@@ -20,7 +20,7 @@ export const REASON_INVALID_CANDIDATE = "invalid_candidate" as const;
 
 export class UnknownDirective {
   readonly reason = "semantic_uncertainty" as const;
-  constructor(reason: "semantic_uncertainty" = "semantic_uncertainty") { this.reason = reason; Object.freeze(this); }
+  constructor(reason: "semantic_uncertainty") { this.reason = reason; Object.freeze(this); }
 }
 
 export class RejectedDirective {
@@ -45,7 +45,7 @@ function rejectedReason(reason: PreprocessorReason): RejectedReason {
 function fromHeuristic(userInput: string): DraftResult {
   const heuristic = preprocess_heuristic(userInput);
   if (heuristic.outcome === "directive") return new DraftResult("heuristic", heuristic.directive);
-  if (heuristic.outcome === "unknown") return new DraftResult("heuristic", new UnknownDirective());
+  if (heuristic.outcome === "unknown") return new DraftResult("heuristic", new UnknownDirective("semantic_uncertainty"));
   return new DraftResult("heuristic", new RejectedDirective(rejectedReason(heuristic.reason)));
 }
 
