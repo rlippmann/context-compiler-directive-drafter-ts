@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-import { CanonicalDirective, decompose_directive, get_directive_metadata } from "@rlippmann/context-compiler/grammar";
+import { CanonicalDirective, decomposeDirective, getDirectiveMetadata } from "@rlippmann/context-compiler/grammar";
 
 export type DraftFallback = (userInput: string) => string | null;
 export type AsyncDraftFallback = (userInput: string) => Promise<string | null>;
@@ -58,9 +58,11 @@ function restrictedPromptName(structuredOutput: boolean, allowed: readonly strin
   return structuredOutput ? "fallback-structured-v1.txt" : "fallback-free-text-v1.txt";
 }
 
-function canonicalForm(metadata: ReturnType<typeof get_directive_metadata>[number]): string {
-  const operands = metadata.operand_names.map((name) => `<${name.replaceAll("_", " ")}>`);
-  return [metadata.canonical_start, ...operands].join(" ");
+function canonicalForm(metadata: ReturnType<typeof getDirectiveMetadata>[number]): string {
+  const samples = Object.fromEntries(metadata.operand_names.map((name) => [name, `sample ${name.replaceAll("_", " ")}`]));
+  let rendered = new CanonicalDirective(metadata.kind, samples).text;
+  for (const name of metadata.operand_names) rendered = rendered.replaceAll(`sample ${name.replaceAll("_", " ")}`, `<${name.replaceAll("_", " ")}>`);
+  return rendered;
 }
 
 function directiveCategory(canonicalStart: string): string {
@@ -71,7 +73,7 @@ function directiveCategory(canonicalStart: string): string {
 
 function renderCanonicalForms(prompt: string, allowed: readonly string[]): string {
   const lines = ["Canonical directive forms:"];
-  for (const metadata of get_directive_metadata()) {
+  for (const metadata of getDirectiveMetadata()) {
     if (allowed.includes(metadata.kind)) lines.push(`- \`${canonicalForm(metadata)}\` (${directiveCategory(metadata.canonical_start)})`);
   }
   const start = prompt.indexOf("Canonical directive forms:");
@@ -89,7 +91,7 @@ function filterExamples(prompt: string, heading: string, nextHeading: string, al
   const kept = blocks.filter((block) => {
     const output = block.match(/^(?:Source:|User:)[\s\S]*?\n(?:Correct candidate:|Output:) (.+)$/u)?.[1];
     if (output === undefined) return block.trim() === "";
-    const directive = decompose_directive(output);
+    const directive = decomposeDirective(output);
     return directive instanceof CanonicalDirective && allowed.includes(directive.kind);
   });
   return `${prompt.slice(0, start)}${heading}${kept.length ? `\n\n${kept.join("\n\n")}` : ""}${prompt.slice(end)}`;
@@ -109,7 +111,7 @@ export function getFallbackProfile(options: FallbackProfileOptions = {}): Fallba
   const structuredOutput = options.structuredOutput ?? false;
   const allowed = options.allowedDirectiveKinds == null ? null : [...new Set(options.allowedDirectiveKinds)].sort();
   if (allowed !== null) {
-    const known = new Set<string>(get_directive_metadata().map((metadata) => metadata.kind));
+    const known = new Set<string>(getDirectiveMetadata().map((metadata) => metadata.kind));
     const unknown = allowed.filter((kind) => !known.has(kind));
     if (unknown.length > 0) throw new Error(`Unknown directive kinds: ${JSON.stringify(unknown)}`);
   }
