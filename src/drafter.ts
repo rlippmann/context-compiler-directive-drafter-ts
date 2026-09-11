@@ -1,4 +1,4 @@
-import { CanonicalDirective, decompose_directive } from "@rlippmann/context-compiler/grammar";
+import { CanonicalDirective, decomposeDirective } from "@rlippmann/context-compiler/grammar";
 
 import {
   InvalidFallbackResponseError,
@@ -55,7 +55,7 @@ function fromFallbackOutput(output: string | null, source: string): DraftResult 
   if (validated.classification !== "directive" || validated.output === null) return new DraftResult(source, new RejectedDirective(REASON_INVALID_CANDIDATE));
   const parsed = parse_preprocessor_output(validated.output);
   if (parsed === null) return new DraftResult(source, new RejectedDirective(REASON_INVALID_CANDIDATE));
-  const parsedDirective = decompose_directive(parsed);
+  const parsedDirective = decomposeDirective(parsed);
   if (!(parsedDirective instanceof CanonicalDirective)) return new DraftResult(source, new RejectedDirective(REASON_INVALID_CANDIDATE));
   return new DraftResult(source, parsedDirective);
 }
