@@ -101,4 +101,12 @@ describe("Python provider-neutral fallback contract", () => {
     expect(() => parseStructuredResponse('{"classification":"directive","output":null}')).toThrow(InvalidFallbackResponseError);
     expect(() => parseStructuredResponse("not json")).toThrow(InvalidFallbackResponseError);
   });
+
+  it("renders a hard restriction for non-use directive kinds", () => {
+    const profile = getFallbackProfile({ allowedDirectiveKinds: ["clear_state"] });
+    const canonicalForms = profile.systemPrompt.match(/Canonical directive forms:[\s\S]*?(?=\n\nWhat premise vs policy means:)/u)?.[0];
+    expect(canonicalForms).toBe("Canonical directive forms:\n- `clear state` (Administrative)");
+    expect(profile.systemPrompt).toContain("Only these directive kinds may be proposed: `clear_state`.");
+    expect(profile.systemPrompt).not.toContain("- `use <item>` (Policy)");
+  });
 });
