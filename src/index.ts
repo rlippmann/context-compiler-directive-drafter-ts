@@ -138,3 +138,6 @@ function stripLeadingHeaders(promptTemplate: string): string { const lines = pro
 function normalizeItem(input: string): string { let out = input.toLowerCase().normalize("NFKC").replace(/[\u2018\u2019]/gu, "'").replace(/[\s_-]+/gu, " ").trim(); for (const prefix of ["the ", "a ", "an "]) if (out.startsWith(prefix)) { out = out.slice(prefix.length).trim(); break; } return out.replace(/\bdont\b/gu, "don't"); }
 export function render_prompt(path: string, state: EngineState): string | null { if (typeof path !== "string") return null; let template: string; try { template = readFileSync(path, "utf8"); } catch { return null; } const premise = state.premise === null ? "null" : state.premise; const policies = [...new Set(Object.keys(state.policies).map(normalizeItem).filter(Boolean))].sort((a, b) => a.localeCompare(b)); return stripLeadingHeaders(template).replaceAll(PROMPT_TOKEN_NULL_OR_VALUE, premise).replaceAll(PROMPT_TOKEN_POLICY_SET, policies.length ? policies.join(", ") : "(none)"); }
 export const renderPrompt = render_prompt;
+
+export * from "./drafter.js";
+export * from "./fallbacks.js";
