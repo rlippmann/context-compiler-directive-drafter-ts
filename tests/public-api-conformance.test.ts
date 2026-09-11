@@ -29,10 +29,12 @@ function sourceExportNames(): Set<string> {
   return new Set(program.getTypeChecker().getExportsOfModule(symbol).map((exported) => exported.getName()));
 }
 
+const declaredExportNames = sourceExportNames();
+
 describe("Python portable public API contract", () => {
   it("matches the fixture's exact TypeScript declaration export set", () => {
     expect(contract.exports.mode).toBe("exact");
-    expect([...sourceExportNames()].sort()).toEqual([...contract.exports.names].sort());
+    expect([...declaredExportNames].sort()).toEqual([...contract.exports.names].sort());
   });
 
   it("matches the fixture's exact runtime export set and constants", () => {
@@ -49,9 +51,15 @@ describe("Python portable public API contract", () => {
   it("consumes the declared portable DirectiveDrafter member surface", () => {
     const expected = contract.exports.members.DirectiveDrafter!.portable_members;
     expect(expected?.mode).toBe("exact");
-    const prototype = Object.getPrototypeOf(api.DirectiveDrafter.prototype) as Record<string, unknown>;
-    const members = new Set(Object.getOwnPropertyNames(api.DirectiveDrafter.prototype));
-    for (const name of Object.keys(expected?.members ?? {})) expect(members.has(name), `Missing portable member ${name}`).toBe(true);
-    expect(prototype).toBeDefined();
+    const expectedMembers = expected?.members ?? {};
+    const actualMembers = Object.getOwnPropertyNames(api.DirectiveDrafter.prototype).filter((name) => name !== "constructor").sort();
+    expect(actualMembers).toEqual(Object.keys(expectedMembers).sort());
+    for (const [name, member] of Object.entries(expectedMembers)) {
+      const descriptor = Object.getOwnPropertyDescriptor(api.DirectiveDrafter.prototype, name);
+      expect(descriptor, `Missing portable member ${name}`).toBeDefined();
+      if (member.kind !== "operation") continue;
+      expect(typeof descriptor?.value, `${name} should be an operation`).toBe("function");
+      expect(descriptor?.value?.constructor.name === "AsyncFunction", `${name} async metadata`).toBe(member.async === true);
+    }
   });
 });

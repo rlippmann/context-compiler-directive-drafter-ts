@@ -29,11 +29,13 @@ function sourceExportNames(): Set<string> {
   return new Set(program.getTypeChecker().getExportsOfModule(symbol).map((exported) => exported.getName()));
 }
 
+const declaredExportNames = sourceExportNames();
+
 describe("Python portable fallbacks API contract", () => {
   it("matches the exact declaration export set with idiomatic TypeScript operation names", () => {
     const expected = contract.exports.names.map((name) => names[name] ?? name).sort();
     expect(contract.exports.mode).toBe("exact");
-    expect([...sourceExportNames()].sort()).toEqual(expected);
+    expect([...declaredExportNames].sort()).toEqual(expected);
   });
 
   it("matches the exact runtime export set and forbidden exports", () => {
