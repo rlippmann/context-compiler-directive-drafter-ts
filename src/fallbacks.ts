@@ -1,8 +1,11 @@
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-
 import { CanonicalDirective, decomposeDirective, getDirectiveMetadata } from "@rlippmann/context-compiler/grammar";
 import { canonicalFormFromMetadata, renderCanonicalFormsFromMetadata } from "./grammar-derivation.js";
+import {
+  FALLBACK_FREE_TEXT_PROMPT,
+  FALLBACK_RESTRICTED_STRUCTURED_USE_ITEM_PROMPT,
+  FALLBACK_RESTRICTED_USE_ITEM_PROMPT,
+  FALLBACK_STRUCTURED_PROMPT
+} from "./fallback-prompts.js";
 
 export type DraftFallback = (userInput: string) => string | null;
 export type AsyncDraftFallback = (userInput: string) => Promise<string | null>;
@@ -44,19 +47,9 @@ const STRUCTURED_RESPONSE_SCHEMA = {
   additionalProperties: false
 } as const;
 
-function promptPath(name: string): string {
-  return fileURLToPath(new URL(`../prompts/${name}`, import.meta.url));
-}
-
-function readPrompt(name: string): string {
-  return readFileSync(promptPath(name), "utf8").replace(/\n$/u, "");
-}
-
-function restrictedPromptName(structuredOutput: boolean, allowed: readonly string[]): string {
-  if (allowed.length === 1 && allowed[0] === "use_item") {
-    return structuredOutput ? "fallback-restricted-structured-use-item-v1.txt" : "fallback-restricted-use-item-v1.txt";
-  }
-  return structuredOutput ? "fallback-structured-v1.txt" : "fallback-free-text-v1.txt";
+function promptTemplate(structuredOutput: boolean, restrictedUseItem: boolean): string {
+  if (restrictedUseItem) return structuredOutput ? FALLBACK_RESTRICTED_STRUCTURED_USE_ITEM_PROMPT : FALLBACK_RESTRICTED_USE_ITEM_PROMPT;
+  return structuredOutput ? FALLBACK_STRUCTURED_PROMPT : FALLBACK_FREE_TEXT_PROMPT;
 }
 
 function directiveCategory(prompt: string, form: string): string {
@@ -64,8 +57,8 @@ function directiveCategory(prompt: string, form: string): string {
   return line?.match(/\(([^()]*)\)$/u)?.[1] ?? "Policy";
 }
 
-function renderCanonicalForms(prompt: string, allowed: readonly string[]): string {
-  const metadata = getDirectiveMetadata().filter((item) => allowed.includes(item.kind));
+function renderCanonicalForms(prompt: string, allowed: readonly string[] | null): string {
+  const metadata = getDirectiveMetadata().filter((item) => allowed === null || allowed.includes(item.kind));
   const categoryByKind = Object.fromEntries(metadata.map((item) => {
     const form = canonicalFormFromMetadata(item);
     return [item.kind, directiveCategory(prompt, form)];
@@ -93,7 +86,7 @@ function filterExamples(prompt: string, heading: string, nextHeading: string, al
 }
 
 function renderDynamicRestrictedPrompt(structuredOutput: boolean, allowed: readonly string[]): string {
-  let prompt = readPrompt(structuredOutput ? "fallback-structured-v1.txt" : "fallback-free-text-v1.txt");
+  let prompt = promptTemplate(structuredOutput, false);
   prompt = renderCanonicalForms(prompt, allowed);
   prompt = filterExamples(prompt, "Scope and payload contrast examples:", "Examples of user requests that may be drafted as directives:", allowed);
   prompt = filterExamples(prompt, "Examples of user requests that may be drafted as directives:", structuredOutput ? "Contrastive examples:": "Examples of ordinary conversation that must not become directives:", allowed);
@@ -111,11 +104,10 @@ export function getFallbackProfile(options: FallbackProfileOptions = {}): Fallba
     if (unknown.length > 0) throw new Error(`Unknown directive kinds: ${JSON.stringify(unknown)}`);
   }
   const mode = structuredOutput ? "structured" : "free_text";
-  const prompt = allowed === null
-    ? readPrompt(structuredOutput ? "fallback-structured-v1.txt" : "fallback-free-text-v1.txt")
-    : allowed.length === 1 && allowed[0] === "use_item"
-      ? readPrompt(restrictedPromptName(structuredOutput, allowed))
-      : renderDynamicRestrictedPrompt(structuredOutput, allowed);
+  const restrictedUseItem = allowed !== null && allowed.length === 1 && allowed[0] === "use_item";
+  let prompt = promptTemplate(structuredOutput, restrictedUseItem);
+  prompt = renderCanonicalForms(prompt, allowed);
+  if (allowed !== null && !restrictedUseItem) prompt = renderDynamicRestrictedPrompt(structuredOutput, allowed);
   return new FallbackProfile(
     prompt,
     mode,
