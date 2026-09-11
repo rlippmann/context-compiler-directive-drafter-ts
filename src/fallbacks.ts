@@ -65,16 +65,18 @@ function canonicalForm(metadata: ReturnType<typeof getDirectiveMetadata>[number]
   return rendered;
 }
 
-function directiveCategory(canonicalStart: string): string {
-  if (canonicalStart === "set premise" || canonicalStart === "change premise to") return "Premise";
-  if (["clear premise", "reset policies", "clear state"].includes(canonicalStart)) return "Administrative";
-  return "Policy";
+function directiveCategory(prompt: string, form: string): string {
+  const line = prompt.split("\n").find((candidate) => candidate.startsWith(`- \`${form}\` (`));
+  return line?.match(/\(([^()]*)\)$/u)?.[1] ?? "Policy";
 }
 
 function renderCanonicalForms(prompt: string, allowed: readonly string[]): string {
   const lines = ["Canonical directive forms:"];
   for (const metadata of getDirectiveMetadata()) {
-    if (allowed.includes(metadata.kind)) lines.push(`- \`${canonicalForm(metadata)}\` (${directiveCategory(metadata.canonical_start)})`);
+    if (allowed.includes(metadata.kind)) {
+      const form = canonicalForm(metadata);
+      lines.push(`- \`${form}\` (${directiveCategory(prompt, form)})`);
+    }
   }
   const start = prompt.indexOf("Canonical directive forms:");
   const end = prompt.indexOf("\n\nWhat premise vs policy means:", start);
