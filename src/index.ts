@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 
-import { CanonicalDirective, decompose_directive, getDirectiveMetadata } from "@rlippmann/context-compiler/grammar";
+import { CanonicalDirective, decomposeDirective, getDirectiveMetadata } from "@rlippmann/context-compiler/grammar";
 import { canonicalStartsFromMetadata, isIncompleteCanonicalDirective, renderCanonicalCandidate } from "./grammar-derivation.js";
 
 export const PREPROCESSOR_NO_DIRECTIVE_SENTINEL = "<NO_DIRECTIVE>";
@@ -106,7 +106,7 @@ export function preprocess_heuristic(message: string): PreprocessorHeuristicResu
   if (isIncompleteDirective(candidate)) return rejected("incomplete_directive");
   if (UNSUPPORTED_ALIAS_PATTERNS.some((pattern) => pattern.test(candidate))) return rejected("malformed_directive");
   if (hasMultipleDirectiveStarts(candidate)) return rejected("compound_directive");
-  const decomposed = decompose_directive(candidate);
+  const decomposed = decomposeDirective(candidate);
   if (decomposed instanceof CanonicalDirective) return { outcome: "directive", directive: decomposed };
   if (decomposed !== null) return rejected(isIncompleteDirective(candidate) ? "incomplete_directive" : "malformed_directive");
   if (/^\s*(?:please|allow|(?:do not|don't) use|stop using|set premise|change premise|use)\b/i.test(candidate)) return rejected("malformed_directive");
@@ -119,13 +119,13 @@ function validateStructuredOutput(rawOutput: unknown): PreprocessorValidationRes
   if (typeof rawOutput !== "object" || rawOutput === null || Array.isArray(rawOutput)) return rejectedResult();
   const record = rawOutput as Record<string, unknown>;
   if (Object.keys(record).length !== 2 || !Object.hasOwn(record, "classification") || !Object.hasOwn(record, "output")) return rejectedResult();
-  if (record.classification === "directive" && typeof record.output === "string") { const parsed = decompose_directive(record.output.trim()); return parsed instanceof CanonicalDirective ? { classification: "directive", output: parsed.text } : rejectedResult(); }
+  if (record.classification === "directive" && typeof record.output === "string") { const parsed = decomposeDirective(record.output.trim()); return parsed instanceof CanonicalDirective ? { classification: "directive", output: parsed.text } : rejectedResult(); }
   return rejectedResult();
 }
 function validateTextOutput(rawOutput: string): PreprocessorValidationResult {
   const stripped = rawOutput.trim();
   if (!stripped || stripped.toUpperCase() === PREPROCESSOR_NO_DIRECTIVE_SENTINEL) return rejectedResult();
-  const parsed = decompose_directive(stripped);
+  const parsed = decomposeDirective(stripped);
   if (parsed instanceof CanonicalDirective) return { classification: "directive", output: parsed.text };
   if (stripped[0] === "{" || stripped[0] === "[") { try { return validateStructuredOutput(JSON.parse(stripped) as unknown); } catch { return rejectedResult(); } }
   return rejectedResult();
