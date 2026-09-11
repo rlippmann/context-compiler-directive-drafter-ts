@@ -17,8 +17,15 @@ export function isIncompleteCanonicalDirective(message: string, metadata: Iterab
 }
 
 export function canonicalFormFromMetadata(item: GrammarMetadata): string {
-  const operands = item.operand_names.map((name) => `<${name.replaceAll("_", " ")}>`);
-  return [item.canonical_start, ...operands].join(" ");
+  const sampleOperands = Object.fromEntries(item.operand_names.map((name) => [name, `sample ${name.replaceAll("_", " ")}`]));
+  try {
+    let rendered = new CanonicalDirective(item.kind, sampleOperands).text;
+    for (const name of item.operand_names) rendered = rendered.replace(`sample ${name.replaceAll("_", " ")}`, `<${name.replaceAll("_", " ")}>`);
+    return rendered;
+  } catch {
+    const operands = item.operand_names.map((name) => `<${name.replaceAll("_", " ")}>`);
+    return [item.canonical_start, ...operands].join(" ");
+  }
 }
 
 export function renderCanonicalFormsFromMetadata(
