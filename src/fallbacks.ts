@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 import { CanonicalDirective, decomposeDirective, getDirectiveMetadata } from "@rlippmann/context-compiler/grammar";
+import { canonicalFormFromMetadata, renderCanonicalFormsFromMetadata } from "./grammar-derivation.js";
 
 export type DraftFallback = (userInput: string) => string | null;
 export type AsyncDraftFallback = (userInput: string) => Promise<string | null>;
@@ -58,30 +59,22 @@ function restrictedPromptName(structuredOutput: boolean, allowed: readonly strin
   return structuredOutput ? "fallback-structured-v1.txt" : "fallback-free-text-v1.txt";
 }
 
-function canonicalForm(metadata: ReturnType<typeof getDirectiveMetadata>[number]): string {
-  const samples = Object.fromEntries(metadata.operand_names.map((name) => [name, `sample ${name.replaceAll("_", " ")}`]));
-  let rendered = new CanonicalDirective(metadata.kind, samples).text;
-  for (const name of metadata.operand_names) rendered = rendered.replaceAll(`sample ${name.replaceAll("_", " ")}`, `<${name.replaceAll("_", " ")}>`);
-  return rendered;
-}
-
 function directiveCategory(prompt: string, form: string): string {
   const line = prompt.split("\n").find((candidate) => candidate.startsWith(`- \`${form}\` (`));
   return line?.match(/\(([^()]*)\)$/u)?.[1] ?? "Policy";
 }
 
 function renderCanonicalForms(prompt: string, allowed: readonly string[]): string {
-  const lines = ["Canonical directive forms:"];
-  for (const metadata of getDirectiveMetadata()) {
-    if (allowed.includes(metadata.kind)) {
-      const form = canonicalForm(metadata);
-      lines.push(`- \`${form}\` (${directiveCategory(prompt, form)})`);
-    }
-  }
+  const metadata = getDirectiveMetadata().filter((item) => allowed.includes(item.kind));
+  const categoryByKind = Object.fromEntries(metadata.map((item) => {
+    const form = canonicalFormFromMetadata(item);
+    return [item.kind, directiveCategory(prompt, form)];
+  }));
+  const forms = renderCanonicalFormsFromMetadata(metadata, categoryByKind);
   const start = prompt.indexOf("Canonical directive forms:");
   const end = prompt.indexOf("\n\nWhat premise vs policy means:", start);
   if (start < 0 || end < 0) throw new Error("fallback prompt is missing canonical directive forms");
-  return `${prompt.slice(0, start)}${lines.join("\n")}${prompt.slice(end)}`;
+  return `${prompt.slice(0, start)}${forms}${prompt.slice(end)}`;
 }
 
 function filterExamples(prompt: string, heading: string, nextHeading: string, allowed: readonly string[]): string {
