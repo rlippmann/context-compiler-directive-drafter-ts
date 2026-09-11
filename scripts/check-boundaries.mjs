@@ -22,7 +22,7 @@ const checks = [
     rationale: "Direct .state assignment is a simple signal for possible authoritative state mutation across the boundary."
   },
   {
-    pattern: "from \"@rlippmann/context-compiler\"",
+    pattern: /@rlippmann\/context-compiler(?=["'])/,
     rationale: "Package source and package-owned examples should not import the authority-layer package root; grammar-only imports are allowed."
   }
 ];
@@ -67,13 +67,13 @@ async function main() {
   for (const filePath of files) {
     const content = await readFile(filePath, "utf8");
     for (const check of checks) {
-      const index = content.indexOf(check.pattern);
+      const index = check.pattern instanceof RegExp ? content.search(check.pattern) : content.indexOf(check.pattern);
       if (index === -1) {
         continue;
       }
       violations.push({
         ...formatLocation(filePath, content, index),
-        pattern: check.pattern,
+        pattern: check.pattern instanceof RegExp ? check.pattern.toString() : check.pattern,
         rationale: check.rationale
       });
     }
