@@ -55,6 +55,6 @@
     "vitest": "^3.2.4"
   },
   "dependencies": {
-    "@rlippmann/context-compiler": "^0.9.0-dev.1"
+    "@rlippmann/context-compiler": "0.9.0-dev.2"
   }
 }
